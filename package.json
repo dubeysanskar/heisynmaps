@@ -12,13 +12,20 @@
     "smoke": "node scripts/smoke-test.mjs",
     "make-admin": "node scripts/make-admin.mjs",
     "preview": "npm run build && next start",
-    "data:pincodes": "node scripts/data/import-pincodes.mjs"
+    "data:pincodes": "node scripts/data/import-pincodes.mjs",
+    "data:fonts": "node scripts/data/install-fonts.mjs",
+    "data:search": "node scripts/data/build-search-index.mjs",
+    "data:tiles": "node scripts/data/build-tiles.mjs",
+    "engine:routing:build": "node scripts/engines/routing.mjs build",
+    "engine:routing": "node scripts/engines/routing.mjs serve",
+    "setup": "node scripts/setup.mjs"
   },
   "dependencies": {
     "@mapbox/polyline": "^1.2.1",
     "@turf/boolean-point-in-polygon": "^7.4.0",
     "@turf/circle": "^7.4.0",
     "better-sqlite3": "^13.0.3",
+    "fzstd": "^0.1.1",
     "maplibre-gl": "^6.15.0",
     "next": "16.4.2",
     "pg": "^8.23.1",

@@ -67,5 +67,6 @@ export function vectorSource(origin, key) {
   if (hasLocalTiles()) {
     return { type: "vector", url: `${origin}/api/v1/tiles/tilejson?key=${encodeURIComponent(key)}` };
   }
+  if (config.requireSelfHosted) throw new Error("No local tiles: build them with npm run data:tiles (REQUIRE_SELF_HOSTED=1)");
   return { type: "vector", url: FALLBACK.tilejson };
 }

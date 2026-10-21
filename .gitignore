@@ -45,3 +45,4 @@ next-env.d.ts
 /infra/data/
 /public/vendor/
 !.env.example
+/public/fonts/

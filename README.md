@@ -23,6 +23,32 @@ Read **[docs/PRD.md](docs/PRD.md)** first. It covers the research, the stack dec
 | Addressing | DIGIPIN (India Post's algorithm, checked against its published examples) and MapPIN |
 | Database | SQLite locally (better-sqlite3), Postgres via `DATABASE_URL` |
 
+## Independent by design
+
+Naksha runs its own engines. With `npm run setup` done, `GET /api/v1/status` reports `"independent": true`: no request touches a third-party service.
+
+| Capability | Engine (ours) | Built by |
+|---|---|---|
+| Search, autocomplete, reverse, nearby | Built-in SQLite index (FTS5 + trigram typo tolerance + R*Tree), 18.4 lakh Indian places, runs inside the app | `npm run data:search` |
+| Map tiles | PMTiles built with Planetiler from OpenStreetMap, served by the app | `npm run data:tiles` |
+| Map fonts | Noto Sans (OFL) in `public/fonts` | `npm run data:fonts` |
+| PIN codes | India Post directory + boundaries in the database | `npm run data:pincodes` |
+| Routing, matrix, isochrones, optimisation, snap | Valhalla (`pyvalhalla` on Windows/macOS, Docker on Linux) | `npm run engine:routing:build` → `npm run engine:routing` |
+| Fleet VRP (optional) | VROOM (Docker) | `infra/docker-compose.yml` |
+
+The only outside contact is the **one-time data download** (OpenStreetMap extracts from Geofabrik, the OSM place export, India Post data, fonts), after which everything works offline. Set `REQUIRE_SELF_HOSTED=1` in production so a missing engine fails loudly instead of silently using a public demo server.
+
+```bash
+pip install pyvalhalla==3.9.1     # routing engine (no Docker needed)
+npm run setup                     # downloads open data once, builds every engine (NCR); --region=india for all India
+npm run engine:routing            # terminal 1: routing on :8002
+npm run dev                       # terminal 2: the app
+```
+
+Keep `NAKSHA_DATA_DIR` outside OneDrive/Dropbox (multi-GB). See `.env.example`.
+
+Delhi NCR spans two Geofabrik extracts: the Northern Zone (Delhi, Haryana) and the Central Zone (Noida, Ghaziabad and Greater Noida in Uttar Pradesh). `npm run setup` downloads both and merges them with `scripts/data/merge_osm.py` (needs `pip install osmium`), a streaming merge that keeps memory flat. Using only the Northern Zone leaves the UP half of NCR without roads.
+
 ## Run it locally
 
 ```bash
@@ -89,7 +115,11 @@ src/lib/style.js                MapLibre style generator (light, dark, logistics
 src/lib/digipin.js              DIGIPIN encode/decode
 src/lib/db.js                   SQLite/Postgres adapter and schema
 infra/                          docker compose for Valhalla, Photon, VROOM, PostGIS
-scripts/data/build-tiles.sh     Planetiler → PMTiles
+scripts/setup.mjs               one-command independent setup (downloads + builds every engine)
+scripts/data/build-search-index.mjs   our search index from the OSM place export
+scripts/data/build-tiles.mjs    Planetiler → PMTiles (portable Java; "lite" mode for inland regions)
+scripts/data/install-fonts.mjs  map fonts into public/fonts
+scripts/engines/routing.mjs     build / run Valhalla natively via pyvalhalla
 scripts/smoke-test.mjs          end-to-end API check
 ```
 

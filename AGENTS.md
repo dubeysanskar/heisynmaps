@@ -24,4 +24,5 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `npm run smoke` covers key restrictions (scopes, quotas, IP, origin, disable, rotate) as well as every endpoint.
 - PIN codes live in `pincodes`, `pincode_offices`, `pincode_boundaries` (loaded by `scripts/data/import-pincodes.mjs`); lookups go through `src/lib/pincode.js`, which keeps an in-memory index refreshed every 10 minutes. Point → PIN priority: boundary, then OSM address postcode, then nearest post office.
 - Turbopack dev on this OneDrive folder sometimes gets stuck (reload loops with "HMR hash mismatch", or stale modules returning old data). Restart `npm run dev` before debugging further.
+- Independence: search uses the built-in index (`src/lib/engines/localsearch.js`, SEARCH_DB_PATH) whenever it exists; photon.js only falls back to Photon without it. `src/lib/engines/report.js` is the single source for engine status (`/api/v1/status` → `independent`, admin Engines page). Never add a runtime call to a third-party service; data downloads belong in `scripts/`.
 

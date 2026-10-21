@@ -1,7 +1,8 @@
-# Self-hosted engines for Naksha. Run on a Linux server (India region), not a laptop:
+# Self-hosted engines for Naksha on a Linux server (India region):
 #   cd infra && cp .env.example .env && docker compose up -d
-# First start builds routing tiles and downloads the search index, which takes a while.
-# Then point the Next.js app at them (see ../.env.example).
+# Search, map tiles, fonts and PIN codes run inside the app itself (npm run setup builds them),
+# so this file only adds routing (Valhalla), fleet optimisation (VROOM) and Postgres.
+# On Windows/macOS without Docker, run routing with npm run engine:routing instead.
 
 services:
   # Routing: route, matrix, isochrone, optimized_route, trace_route.
@@ -13,8 +14,8 @@ services:
     volumes:
       - ./data/valhalla:/custom_files
     environment:
-      # Builds from this extract; drop extra .pbf files into ./data/valhalla to add regions.
-      tile_urls: ${OSM_PBF_URL:-https://download.geofabrik.de/asia/india/northern-zone-latest.osm.pbf}
+      # Space-separated extracts. Delhi NCR needs both zones: Delhi/Haryana (Northern) + Noida/Ghaziabad (Central).
+      tile_urls: ${OSM_PBF_URLS:-https://download.geofabrik.de/asia/india/northern-zone-latest.osm.pbf https://download.geofabrik.de/asia/india/central-zone-latest.osm.pbf}
       serve_tiles: "True"
       build_admins: "True"
       build_time_zones: "True"
@@ -23,8 +24,10 @@ services:
       force_rebuild: "False"
       server_threads: ${VALHALLA_THREADS:-4}
 
-  # Search: autocomplete, geocode, reverse, category nearby (Photon 1.x + prebuilt India index).
+  # Optional. Search is built into the app (npm run data:search → SEARCH_DB_PATH), so Photon is only
+  # needed if you prefer it: docker compose --profile photon up -d, then set PHOTON_URL and SEARCH_ENGINE=photon.
   photon:
+    profiles: ["photon"]
     build: ./photon
     restart: unless-stopped
     ports:

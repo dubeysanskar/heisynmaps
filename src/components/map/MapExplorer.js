@@ -476,9 +476,14 @@ export default function MapExplorer({ apiKey }) {
       const radius = Math.min(25000, Math.max(800, Math.round(40000 / 2 ** (map.getZoom() - 10))));
       setNearby({ category, loading: true, results: [] });
       try {
-        const data = await api("/api/v1/nearby", {
-          params: { lat: c.lat.toFixed(5), lon: c.lng.toFixed(5), category: category.id, radius, limit: 30 },
-        });
+        // Widen the circle (up to 25 km) until something turns up.
+        let data;
+        for (let r = radius; ; r = Math.min(25000, r * 4)) {
+          data = await api("/api/v1/nearby", {
+            params: { lat: c.lat.toFixed(5), lon: c.lng.toFixed(5), category: category.id, radius: r, limit: 30 },
+          });
+          if (data.results.length || r >= 25000) break;
+        }
         setNearby({ category, loading: false, results: data.results });
         overlayRef.current.nearbyResults = data.results;
         overlayRef.current.nearby = featureCollection(

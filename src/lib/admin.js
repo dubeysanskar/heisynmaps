@@ -1,7 +1,7 @@
 import { PLANS, SKUS } from "./catalog";
 import { config, engineMode, engineUrl } from "./config";
 import { getDb } from "./db";
-import { hasLocalTiles } from "./engines/tiles";
+import { engineReport } from "./engines/report";
 import { effectiveSkus } from "./settings";
 
 // Read models for /admin. SQL is portable (SQLite + Postgres): `?` placeholders,
@@ -361,20 +361,7 @@ const hostOf = (url) => {
 };
 
 export async function engineHealth() {
-  const [routing, search] = await Promise.all([
-    probe(`${engineUrl("valhalla")}/status`),
-    probe(`${engineUrl("photon")}/api?q=delhi&limit=1`),
-  ]);
-  const db = await getDb();
-  let vroom = { mode: engineMode("vroom") };
-  if (config.vroomUrl) vroom = { ...vroom, ...(await probe(config.vroomUrl.replace(/\/$/, "") + "/health")) };
-  return {
-    routing: { engine: "Valhalla", mode: engineMode("valhalla"), host: hostOf(engineUrl("valhalla")), ...routing },
-    search: { engine: "Photon", mode: engineMode("photon"), host: hostOf(engineUrl("photon")), ...search },
-    tiles: { engine: "PMTiles", mode: hasLocalTiles() ? "self-hosted" : "public-fallback", ok: true },
-    optimizer: { engine: "VROOM", host: config.vroomUrl ? hostOf(config.vroomUrl) : null, ...vroom },
-    database: { engine: db.kind === "postgres" ? "Postgres" : "SQLite", mode: db.kind, ok: true },
-  };
+  return (await engineReport()).engines;
 }
 
 // Which settings are configured; never returns secret values.
@@ -384,6 +371,7 @@ export function envSummary() {
     ["PHOTON_URL", "url"],
     ["VROOM_URL", "url"],
     ["PMTILES_PATH", "path"],
+    ["SEARCH_DB_PATH", "path"],
     ["GLYPHS_URL", "url"],
     ["INDIA_BOUNDARY_GEOJSON", "path"],
     ["REQUIRE_SELF_HOSTED", "flag"],

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { BRAND } from "@/lib/brand";
-import { config } from "@/lib/config";
+import { config, glyphsFor } from "@/lib/config";
 import { vectorSource } from "@/lib/engines/tiles";
 import { apiRoute, preflight, publicOrigin } from "@/lib/gateway";
 import { buildStyle, THEME_NAMES } from "@/lib/style";
@@ -17,7 +17,7 @@ export const GET = apiRoute("maps.load", async (request, { auth }) => {
     theme,
     name: BRAND.product,
     source: vectorSource(origin, auth.raw),
-    glyphs: config.glyphsUrl,
+    glyphs: glyphsFor(origin),
     // Served from /public when present — see docs/PRD.md §7 (official boundary of India).
     indiaBoundaryUrl: fs.existsSync(boundaryFile) ? `${origin}/data/india-boundary.geojson` : null,
   });

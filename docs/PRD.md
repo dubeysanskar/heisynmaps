@@ -181,7 +181,7 @@ Overage per 1,000 calls (about 40–50% under Ola, and well under Google India):
 
 | Phase | Coverage | Data work | Exit criteria |
 |---|---|---|---|
-| **P1: Delhi NCR** (now) | Delhi, Gurugram, Noida, Ghaziabad, Faridabad: bbox `76.84,28.20,77.65,28.90` | Geofabrik `northern-zone` → osmium clip → Planetiler PMTiles; Valhalla on the clip; Photon India dump | 10 pilot logistics customers; route ETA within ±15% of actuals |
+| **P1: Delhi NCR** (now) | Delhi, Gurugram, Noida, Ghaziabad, Faridabad: bbox `76.84,28.20,77.65,28.90` | Geofabrik `northern-zone` (Delhi, Haryana) + `central-zone` (Noida, Ghaziabad: UP), merged with pyosmium; Planetiler PMTiles clipped to NCR; Valhalla; own search index from the OSM place export | 10 pilot logistics customers; route ETA within ±15% of actuals |
 | **P2: All India** | All 28 states and 8 UTs | Full India PBF; SoI boundary overlay; Google Open Buildings import; Overture Places merge; Pelias evaluation for addresses; PostGIS | Address match rate ≥ 85% on a customer sample |
 | **P3: International** | SAARC/GCC first (Nepal, Bangladesh, Sri Lanka, UAE, KSA), then planet | Planet PMTiles (or a licensed MapTiler planet); regional Valhalla clusters; multi-region CDN | 99.9% SLA across regions |
 | **Moat (ongoing)** | — | Probe data from customer fleets via `/snap` (opt-in): truck no-entry windows, real speeds, gate locations, last-mile "rider notes" at DIGIPIN level | ETAs measurably better than Google for logistics |
@@ -193,27 +193,26 @@ Overage per 1,000 calls (about 40–50% under Ola, and well under Google India):
             │  MapLibre GL  ·  REST calls with API key              │
             └───────────────┬──────────────────────────────────────┘
                             │ HTTPS
-              ┌─────────────▼─────────────┐
-              │  Next.js 16 app            │  /maps · /docs · /console · /api/v1/*
-              │  API gateway: key auth,    │  SQLite (dev) / Postgres (prod)
-              │  rate limit, metering,     │  users · orgs · api_keys · usage_daily
-              │  response normalisation    │  places · geofences
-              └──┬─────────┬─────────┬────┘
-                 │         │         │
-      ┌──────────▼──┐ ┌────▼─────┐ ┌─▼────────┐ ┌──────────┐
-      │ PMTiles file │ │ Valhalla │ │  Photon  │ │  VROOM   │
-      │ (Planetiler) │ │ :8002    │ │  :2322   │ │  :3000   │
-      └──────────────┘ └──────────┘ └──────────┘ └──────────┘
-                 ▲ all built weekly from OpenStreetMap (Geofabrik)
+       ┌────────────────────▼─────────────────────────────┐
+       │  Next.js 16 app                                   │  /maps · /docs · /console · /admin · /api/v1/*
+       │  API gateway: keys, scopes, limits, metering      │  SQLite / Postgres: users · orgs · keys · usage
+       │  Built-in engines (in-process, no network):       │  places · geofences · PIN codes
+       │    · search index (SQLite FTS5 + trigram + R*Tree)│
+       │    · vector tiles (PMTiles) · map fonts           │
+       │    · PIN codes · DIGIPIN · geofences              │
+       └──────────────┬───────────────────────┬───────────┘
+                      │                       │
+              ┌───────▼───────┐       ┌───────▼───────┐
+              │   Valhalla    │       │ VROOM (opt.)  │
+              │   :8002       │       │ :3000         │
+              └───────────────┘       └───────────────┘
+   Everything above is built by us from open data (npm run setup): OpenStreetMap (Geofabrik),
+   the OSM place export, India Post PIN data, Noto fonts. Refreshed weekly on the server.
 ```
 
-**Dev fallbacks.** When an engine URL is not set, the gateway calls public demo services so the product works on a laptop with no Docker:
+**Independence.** At runtime Naksha calls no third-party service: search, tiles, fonts and PIN codes run inside the app, routing runs on our own Valhalla (Docker on Linux, `pyvalhalla` natively on Windows/macOS). `npm run setup` downloads the open data once and builds every engine; `/api/v1/status` returns `"independent": true` and lists any `third_party` engine otherwise.
 
-- Valhalla: `valhalla1.openstreetmap.de`
-- Photon: `photon.komoot.io`
-- Tiles: OpenFreeMap (OpenMapTiles schema, same as ours)
-
-These are **dev-only**. Their fair-use policies forbid production SaaS traffic. `/api/v1/status` reports `self-hosted` or `public-fallback` for each engine.
+**Development fallbacks** (only when an engine is not built, and never with `REQUIRE_SELF_HOSTED=1`): public Valhalla (`valhalla1.openstreetmap.de`), Photon (`photon.komoot.io`) and OpenFreeMap tiles/fonts. Their fair-use policies forbid production traffic.
 
 ## 10. Milestones
 

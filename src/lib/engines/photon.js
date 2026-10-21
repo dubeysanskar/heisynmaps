@@ -2,6 +2,11 @@ import { fetchWithRetry, lru } from "../cache";
 import { config, engineUrl } from "../config";
 import { ApiError } from "../gateway";
 import { tryDigipin } from "../digipin";
+import * as local from "./localsearch";
+
+// Search runs on Naksha's built-in index (localsearch.js) whenever it has been built.
+// Photon is only used when there is no index: a self-hosted one via PHOTON_URL, or the
+// public demo in development.
 
 // Categories for /nearby → Photon 1.x category filters (include=osm.<key>.<value>,...),
 // which work without a text query.
@@ -45,7 +50,8 @@ async function photon(pathname, params) {
 // Identical searches (autocomplete prefixes, popular places) are served from memory.
 const searchCache = lru("photon", { max: 5000, ttlMs: 30 * 60_000 });
 
-export function search(q, { lat, lon, limit = 8, bbox, include } = {}) {
+export async function search(q, { lat, lon, limit = 8, bbox, include } = {}) {
+  if (local.isAvailable()) return local.search(q, { lat, lon, limit, bbox, include });
   return photon("/api", {
     q,
     lat,
@@ -58,6 +64,7 @@ export function search(q, { lat, lon, limit = 8, bbox, include } = {}) {
 }
 
 export async function reverse(lat, lon) {
+  if (local.isAvailable()) return local.reverse(lat, lon);
   const [first] = await photon("/reverse", { lat, lon, limit: 1, lang: "en" });
   return first || null;
 }
