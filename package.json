@@ -11,7 +11,8 @@
     "start": "next start",
     "smoke": "node scripts/smoke-test.mjs",
     "make-admin": "node scripts/make-admin.mjs",
-    "preview": "npm run build && next start"
+    "preview": "npm run build && next start",
+    "data:pincodes": "node scripts/data/import-pincodes.mjs"
   },
   "dependencies": {
     "@mapbox/polyline": "^1.2.1",

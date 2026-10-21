@@ -104,6 +104,31 @@ console.log(`     geofence: truck-7 in ${check?.results?.[0]?.inside?.length}, t
 await call("DELETE", `/api/v1/geofences/${fence?.geofence?.id}`, { key: k });
 await call("DELETE", `/api/v1/places/${pin}`, { key: k });
 
+// --- PIN codes (needs `npm run data:pincodes`; 503 means the data isn't loaded) ---
+const pinProbe = await fetch(`${BASE}/api/v1/pincode/110001`, { headers: { "X-Api-Key": k } });
+if (pinProbe.status === 503) {
+  console.log("SKIP PIN code checks: data not loaded (run npm run data:pincodes)");
+} else {
+  const pinDetail = await call("GET", "/api/v1/pincode/110001", { key: k });
+  console.log(`     PIN 110001: ${pinDetail?.district}, ${pinDetail?.state}, ${pinDetail?.post_offices?.length} post offices`);
+  const pinAt = await call("GET", "/api/v1/pincode?lat=28.4950&lon=77.0896", { key: k });
+  console.log(`     Cyber City is in PIN ${pinAt?.pincode} (${pinAt?.method})`);
+  const pinPrefix = await call("GET", "/api/v1/pincode?q=2013&limit=3", { key: k });
+  console.log(`     prefix 2013 → ${pinPrefix?.results?.map((r) => r.pincode).join(", ")}`);
+  await call("GET", "/api/v1/pincode?q=lajpat%20nagar&limit=3", { key: k });
+  await call("GET", "/api/v1/pincode/012345", { key: k, expect: [400] });
+  await call("GET", "/api/v1/pincode/999999", { key: k, expect: [404] });
+  const pinSearch = await call("GET", "/api/v1/geocode?q=110001", { key: k });
+  const pinFirst = pinSearch?.results?.[0];
+  const pinOk = pinFirst?.type === "pincode" && pinFirst?.pincode === "110001";
+  if (!pinOk) failures++;
+  console.log(`${pinOk ? "PASS" : "FAIL"} geocode "110001" returns the Indian PIN first (${pinFirst?.label})`);
+  const withPin = await call("GET", "/api/v1/geocode?q=connaught%20place", { key: k });
+  const hasPin = /^[1-9]\d{5}$/.test(withPin?.results?.[0]?.pincode || "");
+  if (!hasPin) failures++;
+  console.log(`${hasPin ? "PASS" : "FAIL"} geocode results carry a pincode (${withPin?.results?.[0]?.pincode})`);
+}
+
 // --- key restrictions ---
 const limited = (
   await call("POST", "/api/console/keys", {

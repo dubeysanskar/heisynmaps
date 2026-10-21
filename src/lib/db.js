@@ -123,6 +123,49 @@ const MIGRATIONS = [
       "CREATE INDEX IF NOT EXISTS audit_log_ts ON audit_log(ts)",
     ],
   },
+  {
+    id: 2,
+    name: "India Post PIN codes: directory, per-PIN summary, boundaries",
+    statements: [
+      `CREATE TABLE IF NOT EXISTS pincodes (
+        pincode TEXT PRIMARY KEY,
+        district TEXT,
+        state TEXT,
+        circle TEXT,
+        region TEXT,
+        division TEXT,
+        lat DOUBLE PRECISION,
+        lon DOUBLE PRECISION,
+        min_lon DOUBLE PRECISION,
+        min_lat DOUBLE PRECISION,
+        max_lon DOUBLE PRECISION,
+        max_lat DOUBLE PRECISION,
+        office_count INTEGER NOT NULL DEFAULT 0,
+        delivery_offices INTEGER NOT NULL DEFAULT 0,
+        has_boundary INTEGER NOT NULL DEFAULT 0
+      )`,
+      `CREATE TABLE IF NOT EXISTS pincode_offices (
+        pincode TEXT NOT NULL,
+        office_name TEXT NOT NULL,
+        office_type TEXT,
+        delivery INTEGER NOT NULL DEFAULT 0,
+        district TEXT,
+        state TEXT,
+        lat DOUBLE PRECISION,
+        lon DOUBLE PRECISION
+      )`,
+      "CREATE INDEX IF NOT EXISTS pincode_offices_pin ON pincode_offices(pincode)",
+      `CREATE TABLE IF NOT EXISTS pincode_boundaries (
+        pincode TEXT PRIMARY KEY,
+        geometry TEXT NOT NULL,
+        min_lon DOUBLE PRECISION NOT NULL,
+        min_lat DOUBLE PRECISION NOT NULL,
+        max_lon DOUBLE PRECISION NOT NULL,
+        max_lat DOUBLE PRECISION NOT NULL,
+        source TEXT
+      )`,
+    ],
+  },
 ];
 
 async function migrate(db) {

@@ -440,8 +440,8 @@ final class MapViewController: UIViewController {
   "digipin-mappin": ({ origin }) => (
     <>
       <P>
-        Indian addresses are often unstructured, like “near Hanuman mandir, gali no. 4”. Two short codes make a location
-        unambiguous.
+        Indian addresses are often unstructured, like “near Hanuman mandir, gali no. 4”. PIN codes place an address in its
+        postal area; two short codes then make the exact spot unambiguous.
       </P>
       <H2 id="digipin">DIGIPIN</H2>
       <P>
@@ -468,6 +468,50 @@ final class MapViewController: UIViewController {
         description.
       </Callout>
 
+      <H2 id="pincode">PIN codes</H2>
+      <P>
+        All 19,300 India Post PIN codes and their 1.57 lakh post offices are built in. Use{" "}
+        <A href="/docs/api/pincode">/pincode</A> to find the PIN covering a point, look up a PIN, or search by prefix or area
+        name, and <A href="/docs/api/pincode-detail">/pincode/{"{code}"}</A> for one PIN with its post offices and boundary.
+      </P>
+      <Code
+        title="bash"
+        code={`# which PIN is this delivery point in?
+curl "${origin}/api/v1/pincode?lat=28.495&lon=77.0896" -H "X-Api-Key: $NAKSHA_KEY"
+
+# a PIN, its post offices and boundary
+curl "${origin}/api/v1/pincode/122002?geometry=1" -H "X-Api-Key: $NAKSHA_KEY"
+
+# PINs for an area name, or starting with 2013
+curl "${origin}/api/v1/pincode?q=lajpat%20nagar" -H "X-Api-Key: $NAKSHA_KEY"
+curl "${origin}/api/v1/pincode?q=2013" -H "X-Api-Key: $NAKSHA_KEY"`}
+      />
+      <UL>
+        <li>
+          Search understands PINs: <C>110001</C> returns that PIN area, <C>2013</C> suggests 201301–201309, and{" "}
+          <C>lajpat nagar 110024</C> searches inside that PIN first.
+        </li>
+        <li>
+          Every result from <C>/geocode</C>, <C>/autocomplete</C>, <C>/reverse</C> and <C>/nearby</C> has a <C>pincode</C> and a{" "}
+          <C>pincode_source</C>. <C>address.postcode</C> holds the same value; if OpenStreetMap had a different postcode it is kept
+          as <C>address.osm_postcode</C>.
+        </li>
+      </UL>
+      <P>A point is matched to a PIN in this order, and the response says which method was used:</P>
+      <Table
+        head={["method", "confidence", "how"]}
+        rows={[
+          ["boundary", "high", "Inside the official India Post PIN boundary"],
+          ["address", "medium", "Postcode on the nearest OpenStreetMap address, if it is a real PIN within 15 km"],
+          ["nearest_post_office", "medium (within 3 km) / low", "PIN of the nearest post office"],
+        ]}
+      />
+      <Callout tone="info" title="Boundaries">
+        Official boundaries are loaded for Delhi NCR where open data exists. For complete national coverage, download India
+        Post&apos;s &ldquo;All India Pincode Boundary&rdquo; GeoJSON from data.gov.in and run{" "}
+        <C>npm run data:pincodes -- --boundaries=./All_India_pincode_Boundary.geojson</C>. PIN data © Department of Posts,
+        Government of India, under the Government Open Data Licence – India.
+      </Callout>
       <H2 id="mappin">MapPIN</H2>
       <P>
         A MapPIN is a 6-character code for a place <i>you</i> save: a warehouse, dark store, customer gate or loading dock. Create

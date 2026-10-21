@@ -16,6 +16,8 @@ export function extractGeo(data) {
   if (data.route?.geometry) add(data.route.geometry, { kind: "route" });
   data.geofences?.forEach((g) => add(g.geometry, { kind: "area" }));
   if (data.geofence?.geometry) add(data.geofence.geometry, { kind: "area" });
+  if (data.geometry?.type && data.geometry.type !== "LineString") add(data.geometry, { kind: "area" }); // e.g. a PIN boundary
+  if (data.center && Number.isFinite(data.center.lat)) add({ type: "Point", coordinates: [data.center.lon, data.center.lat] }, { kind: "point" });
   const pts = [...(data.results || []), data.result, data.place, ...(data.places || [])].filter(
     (p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lon)
   );

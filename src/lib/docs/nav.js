@@ -7,7 +7,7 @@ export const GUIDE_META = [
   { slug: "errors", title: "Errors", section: "Guides", summary: "The error envelope and every error code the API returns." },
   { slug: "rate-limits", title: "Rate limits & quotas", section: "Guides", summary: "Per-minute limits, daily key quotas, the free-tier cap and how to back off." },
   { slug: "maps-sdk", title: "Maps SDK", section: "Guides", summary: "Show the map on the web, in React, Android and iOS with MapLibre." },
-  { slug: "digipin-mappin", title: "DIGIPIN & MapPIN", section: "Guides", summary: "India Post's 4 m address grid and short codes for your own places." },
+  { slug: "digipin-mappin", title: "PIN codes, DIGIPIN & MapPIN", section: "Guides", summary: "India Post PIN codes, the 4 m DIGIPIN grid and short codes for your own places." },
   { slug: "logistics-recipes", title: "Logistics recipes", section: "Guides", summary: "Dispatch, service areas, hub arrival and trip audits, end to end." },
   { slug: "coverage", title: "Coverage & data", section: "Guides", summary: "Where the map works today, data sources and attribution." },
 ];

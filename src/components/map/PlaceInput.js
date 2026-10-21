@@ -110,9 +110,9 @@ export default function PlaceInput({ api, value, onSelect, onClear, placeholder,
                 className={`flex w-full items-start gap-3 px-3 py-2 text-left ${i === active ? "bg-[var(--hover)]" : ""}`}
               >
                 <Icon
-                  name={r.source === "digipin" ? "target" : "pin"}
+                  name={r.source === "digipin" ? "target" : r.source === "india_post" ? "mail" : "pin"}
                   size={16}
-                  className={`mt-0.5 shrink-0 ${r.source === "org" ? "text-amber-500" : "text-teal-600"}`}
+                  className={`mt-0.5 shrink-0 ${r.source === "org" ? "text-amber-500" : r.source === "india_post" ? "text-violet-600" : "text-teal-600"}`}
                 />
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium">{r.name}</span>

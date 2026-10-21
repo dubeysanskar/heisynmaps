@@ -22,4 +22,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Client components can import plain data from `src/lib/catalog.js`, but editing that file forces a full reload in dev — expected.
 - DB changes go in `MIGRATIONS` in `src/lib/db.js` (append-only). Mutations of keys or org plan/status must call `invalidateKeyCache()`; admin actions call `audit()`.
 - `npm run smoke` covers key restrictions (scopes, quotas, IP, origin, disable, rotate) as well as every endpoint.
+- PIN codes live in `pincodes`, `pincode_offices`, `pincode_boundaries` (loaded by `scripts/data/import-pincodes.mjs`); lookups go through `src/lib/pincode.js`, which keeps an in-memory index refreshed every 10 minutes. Point → PIN priority: boundary, then OSM address postcode, then nearest post office.
+- Turbopack dev on this OneDrive folder sometimes gets stuck (reload loops with "HMR hash mismatch", or stale modules returning old data). Restart `npm run dev` before debugging further.
 

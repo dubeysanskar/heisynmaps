@@ -27,6 +27,7 @@ Read **[docs/PRD.md](docs/PRD.md)** first. It covers the research, the stack dec
 
 ```bash
 npm install
+npm run data:pincodes  # one-time: India Post PIN codes (19,299 PINs, 1.57 lakh post offices) + NCR boundaries
 npm run dev            # http://localhost:3000
 npm run smoke          # in a second terminal: end-to-end test of every API endpoint
 ```
@@ -101,5 +102,16 @@ These items come from PRD §7 and §11:
 - [ ] Self-host fonts (`GLYPHS_URL`) and put tiles on a CDN.
 - [ ] Billing (Razorpay) on top of `usage_daily`.
 - [ ] Search quality: an alias layer (Gurgaon/Gurugram, run-together names), and an evaluation of Pelias.
+- [ ] Load the official all-India PIN boundary file (see "PIN codes" above) so every PIN lookup is boundary-exact.
 
-Map data © OpenStreetMap contributors (ODbL). DIGIPIN © India Post (Apache-2.0).
+### PIN codes
+
+`npm run data:pincodes` loads India Post's All India Pincode Directory (from data.gov.in, or the official API when `DATA_GOV_IN_API_KEY` is set) and open PIN boundaries for Delhi NCR. Search, reverse geocoding and nearby results then carry a `pincode`, and `/api/v1/pincode` resolves points, codes, prefixes and area names. Points are matched by official boundary where loaded, then the address postcode, then the nearest post office (the response says which).
+
+Delhi's open boundary file is incomplete (27 of 97 PINs). For exact national coverage, download India Post's "All India Pincode Boundary" GeoJSON from data.gov.in (free login) and run:
+
+```bash
+npm run data:pincodes -- --boundaries=./All_India_pincode_Boundary.geojson
+```
+
+Map data © OpenStreetMap contributors (ODbL). DIGIPIN © India Post (Apache-2.0). PIN code data © Department of Posts, Government of India (Government Open Data Licence – India).

@@ -101,6 +101,9 @@ export function SiteFooter() {
           <a href="https://www.indiapost.gov.in/digipin" className="block hover:text-slate-900">
             DIGIPIN by India Post
           </a>
+          <a href="https://data.gov.in" className="block hover:text-slate-900">
+            PIN codes: Department of Posts (GODL-India)
+          </a>
           <a href={`mailto:${BRAND.supportEmail}`} className="block break-all hover:text-slate-900">
             {BRAND.supportEmail}
           </a>

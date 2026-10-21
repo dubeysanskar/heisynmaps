@@ -69,6 +69,7 @@ export default function MapExplorer({ apiKey }) {
   const [iso, setIso] = useState(null);
   const [menu, setMenu] = useState(null);
   const [toast, setToast] = useState(null);
+  const [pinArea, setPinArea] = useState(null);
 
   // ---------- API ----------
   const api = useCallback(
@@ -115,6 +116,17 @@ export default function MapExplorer({ apiKey }) {
       map.addSource("nk-iso", { type: "geojson", data: featureCollection() });
       map.addSource("nk-routes", { type: "geojson", data: featureCollection() });
       map.addSource("nk-nearby", { type: "geojson", data: featureCollection() });
+      map.addSource("nk-pin", { type: "geojson", data: featureCollection() });
+      map.addSource("nk-pin-offices", { type: "geojson", data: featureCollection() });
+      map.addLayer({ id: "nk-pin-fill", type: "fill", source: "nk-pin", paint: { "fill-color": "#7c3aed", "fill-opacity": 0.07 } }, before);
+      map.addLayer({ id: "nk-pin-line", type: "line", source: "nk-pin", filter: ["!", ["get", "approx"]], paint: { "line-color": "#7c3aed", "line-width": 2.5 } }, before);
+      map.addLayer({
+        id: "nk-pin-line-approx",
+        type: "line",
+        source: "nk-pin",
+        filter: ["get", "approx"],
+        paint: { "line-color": "#7c3aed", "line-width": 2, "line-dasharray": [2, 2] },
+      }, before);
       map.addLayer({ id: "nk-iso-fill", type: "fill", source: "nk-iso", paint: { "fill-color": ["get", "color"], "fill-opacity": 0.14 } }, before);
       map.addLayer({ id: "nk-iso-line", type: "line", source: "nk-iso", paint: { "line-color": ["get", "color"], "line-width": 2 } }, before);
       map.addLayer({
@@ -142,6 +154,17 @@ export default function MapExplorer({ apiKey }) {
         paint: { "line-color": "#14b8a6", "line-width": 6 },
       }, before);
       map.addLayer({
+        id: "nk-pin-offices",
+        type: "circle",
+        source: "nk-pin-offices",
+        paint: {
+          "circle-color": ["case", ["get", "delivery"], "#7c3aed", "#a78bfa"],
+          "circle-radius": 5,
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1.5,
+        },
+      });
+      map.addLayer({
         id: "nk-nearby",
         type: "circle",
         source: "nk-nearby",
@@ -156,6 +179,8 @@ export default function MapExplorer({ apiKey }) {
     map.getSource("nk-iso").setData(o.iso || featureCollection());
     map.getSource("nk-routes").setData(o.routes || featureCollection());
     map.getSource("nk-nearby").setData(o.nearby || featureCollection());
+    map.getSource("nk-pin").setData(o.pin || featureCollection());
+    map.getSource("nk-pin-offices").setData(o.pinOffices || featureCollection());
     if (map.getLayer("building-3d")) {
       map.setLayoutProperty("building-3d", "visibility", o.buildings3d ? "visible" : "none");
       map.setLayoutProperty("building", "visibility", o.buildings3d ? "none" : "visible");
@@ -197,6 +222,8 @@ export default function MapExplorer({ apiKey }) {
         setReady(true);
         const digipin = params.get("digipin");
         if (digipin) handlersRef.current.openDigipin?.(digipin);
+        const pin = params.get("pin");
+        if (pin) handlersRef.current.openPin?.(pin);
       });
       map.on("contextmenu", (e) => {
         setMenu({ x: e.point.x, y: e.point.y, lat: e.lngLat.lat, lon: e.lngLat.lng });
@@ -270,6 +297,8 @@ export default function MapExplorer({ apiKey }) {
       if (!map || !maplibregl || !place) return;
       selectedMarkerRef.current?.remove();
       selectedMarkerRef.current = new maplibregl.Marker({ color: "#dc2626" }).setLngLat([place.lon, place.lat]).addTo(map);
+      if (place.type === "pincode") handlersRef.current.showPinArea?.(place.pincode);
+      else handlersRef.current.clearPinArea?.();
       if (!fly) return;
       if (place.extent) {
         const [w, n, e, s] = place.extent;
@@ -282,6 +311,7 @@ export default function MapExplorer({ apiKey }) {
   );
 
   const clearSelection = useCallback(() => {
+    handlersRef.current.clearPinArea?.();
     setSelected(null);
     selectedMarkerRef.current?.remove();
     selectedMarkerRef.current = null;
@@ -302,6 +332,8 @@ export default function MapExplorer({ apiKey }) {
             lat,
             lon,
             digipin: data.digipin,
+            pincode: data.pincode?.pincode ?? null,
+            pincode_source: data.pincode?.method,
           },
           { fly: false }
         );
@@ -311,6 +343,62 @@ export default function MapExplorer({ apiKey }) {
     },
     [api, select, notify]
   );
+
+  // ---------- PIN code area: official boundary (or approximate box) + post offices ----------
+  handlersRef.current.showPinArea = async (pincode, { fit = false } = {}) => {
+    try {
+      const d = await api(`/api/v1/pincode/${pincode}`, { params: { geometry: 1 } });
+      const [w, s, e, n] = d.bbox || [];
+      const area = d.geometry
+        ? { type: "Feature", geometry: d.geometry, properties: { approx: false } }
+        : d.bbox
+          ? { type: "Feature", geometry: { type: "Polygon", coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] }, properties: { approx: true } }
+          : null;
+      overlayRef.current.pin = featureCollection(area ? [area] : []);
+      overlayRef.current.pinOffices = featureCollection(
+        (d.post_offices || [])
+          .filter((o) => o.lat != null)
+          .map((o) => ({ type: "Feature", geometry: { type: "Point", coordinates: [o.lon, o.lat] }, properties: { name: o.name, delivery: o.delivery } }))
+      );
+      applyOverlays();
+      setPinArea(d);
+      if (fit && d.bbox) {
+        mapRef.current?.fitBounds([[w, s], [e, n]], { padding: { top: 60, bottom: 60, right: 60, left: leftPadding() }, maxZoom: 15 });
+      }
+    } catch (err) {
+      notify(err.message);
+    }
+  };
+
+  handlersRef.current.clearPinArea = () => {
+    if (!overlayRef.current.pin && !overlayRef.current.pinOffices) return;
+    overlayRef.current.pin = null;
+    overlayRef.current.pinOffices = null;
+    applyOverlays();
+    setPinArea(null);
+  };
+
+  handlersRef.current.openPin = async (code) => {
+    try {
+      const d = await api(`/api/v1/pincode/${code}`);
+      if (!d.center) throw new Error(`PIN ${code} has no location on record`);
+      select({
+        id: `pincode:${d.pincode}`,
+        source: "india_post",
+        type: "pincode",
+        name: `PIN ${d.pincode}`,
+        label: [d.district, d.state].filter(Boolean).join(", "),
+        category: "address:pincode",
+        lat: d.center.lat,
+        lon: d.center.lon,
+        digipin: d.digipin,
+        pincode: d.pincode,
+        extent: d.bbox ? [d.bbox[0], d.bbox[3], d.bbox[2], d.bbox[1]] : null,
+      });
+    } catch (err) {
+      notify(err.message);
+    }
+  };
 
   handlersRef.current.openDigipin = async (code) => {
     try {
@@ -360,6 +448,20 @@ export default function MapExplorer({ apiKey }) {
     api("/api/v1/digipin", { params: { lat: selected.lat.toFixed(6), lon: selected.lon.toFixed(6) } })
       .then((d) => !stale && setSelected((s) => (s && s.id === selected.id ? { ...s, digipin: d.digipin } : s)))
       .catch(() => !stale && setSelected((s) => (s && s.id === selected.id ? { ...s, digipin: null } : s)));
+    return () => {
+      stale = true;
+    };
+  }, [selected, api]);
+
+  // ...and the PIN code, for selections that do not carry one yet.
+  useEffect(() => {
+    if (!selected || selected.pincode !== undefined) return;
+    let stale = false;
+    const done = (pincode, source) =>
+      !stale && setSelected((s) => (s && s.id === selected.id ? { ...s, pincode, pincode_source: source } : s));
+    api("/api/v1/pincode", { params: { lat: selected.lat.toFixed(6), lon: selected.lon.toFixed(6) } })
+      .then((d) => done(d.pincode, d.method))
+      .catch(() => done(null));
     return () => {
       stale = true;
     };
@@ -550,7 +652,9 @@ export default function MapExplorer({ apiKey }) {
   );
 
   const shareUrl = (place) =>
-    place.digipin
+    place.type === "pincode"
+      ? `${window.location.origin}/maps?pin=${place.pincode}`
+      : place.digipin
       ? `${window.location.origin}/maps?digipin=${place.digipin}`
       : `${window.location.origin}/maps?ll=${place.lat.toFixed(6)},${place.lon.toFixed(6)}&z=17`;
 
@@ -600,7 +704,7 @@ export default function MapExplorer({ apiKey }) {
                   }}
                   onClear={clearSelection}
                   getBias={getBias}
-                  placeholder="Search places, addresses, DIGIPIN or MapPIN"
+                  placeholder="Search places, addresses, PIN codes or DIGIPIN"
                 />
 
                 <div className="no-scrollbar -mx-3 mt-3 flex gap-1.5 overflow-x-auto px-3 pb-1">
@@ -623,6 +727,9 @@ export default function MapExplorer({ apiKey }) {
                 {selected && (
                   <PlaceCard
                     place={selected}
+                    pinArea={pinArea}
+                    onShowPin={() => handlersRef.current.showPinArea(selected.pincode, { fit: true })}
+                    onHidePin={() => handlersRef.current.clearPinArea()}
                     onClose={clearSelection}
                     onDirections={() => startDirections({ ...selected, label: selected.name })}
                     onCopy={copy}
@@ -821,8 +928,15 @@ function MenuItem({ icon, children, onClick }) {
   );
 }
 
-function PlaceCard({ place, onClose, onDirections, onCopy, onShare, onReach }) {
-  const kind = place.category?.split(":")[1]?.replace(/_/g, " ");
+const PIN_SOURCE = {
+  boundary: "inside the official PIN boundary",
+  address: "from the address on record",
+  nearest_post_office: "nearest post office (approximate)",
+};
+
+function PlaceCard({ place, pinArea, onClose, onDirections, onCopy, onShare, onReach, onShowPin, onHidePin }) {
+  const kind = place.type === "pincode" ? "PIN code area" : place.category?.split(":")[1]?.replace(/_/g, " ");
+  const areaShown = pinArea && pinArea.pincode === place.pincode;
   return (
     <div className="mt-3 rounded-xl border border-[var(--line)] p-3">
       <div className="flex items-start justify-between gap-2">
@@ -852,6 +966,25 @@ function PlaceCard({ place, onClose, onDirections, onCopy, onShare, onReach }) {
             </dd>
           </>
         )}
+        {place.pincode && (
+          <>
+            <dt className="text-[var(--muted)]">PIN code</dt>
+            <dd className="flex flex-wrap items-center gap-x-2">
+              <button
+                onClick={() => onCopy(place.pincode, "PIN code")}
+                className="font-mono font-semibold tracking-wide text-violet-700 hover:underline dark:text-violet-300"
+                title={PIN_SOURCE[place.pincode_source] || "PIN code"}
+              >
+                {place.pincode}
+              </button>
+              {place.type !== "pincode" && (
+                <button onClick={areaShown ? onHidePin : onShowPin} className="text-[var(--muted)] hover:underline">
+                  {areaShown ? "Hide area" : "Show area"}
+                </button>
+              )}
+            </dd>
+          </>
+        )}
         {place.mappin && (
           <>
             <dt className="text-[var(--muted)]">MapPIN</dt>
@@ -868,6 +1001,8 @@ function PlaceCard({ place, onClose, onDirections, onCopy, onShare, onReach }) {
           </button>
         </dd>
       </dl>
+
+      {areaShown && <PinDetails area={pinArea} />}
 
       <div className="mt-3 flex gap-2">
         <button
@@ -891,6 +1026,31 @@ function PlaceCard({ place, onClose, onDirections, onCopy, onShare, onReach }) {
           <Icon name="share" size={16} />
         </button>
       </div>
+    </div>
+  );
+}
+
+function PinDetails({ area }) {
+  const offices = area.post_offices || [];
+  return (
+    <div className="mt-3 rounded-lg bg-violet-500/5 p-2.5 text-xs ring-1 ring-violet-500/20">
+      <p className="font-medium">
+        PIN {area.pincode} · {[area.district, area.state].filter(Boolean).join(", ")}
+      </p>
+      <p className="mt-0.5 text-[var(--muted)]">
+        {area.boundary?.available ? "Official boundary shown" : "Approximate area (boundary not loaded for this PIN)"} ·{" "}
+        {offices.length} post office{offices.length === 1 ? "" : "s"}
+      </p>
+      {offices.length > 0 && (
+        <ul className="mt-2 max-h-36 space-y-1 overflow-y-auto">
+          {offices.map((o) => (
+            <li key={o.name} className="flex justify-between gap-2">
+              <span className="truncate">{o.name}</span>
+              <span className="shrink-0 text-[var(--muted)]">{o.delivery ? "Delivery" : o.type}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

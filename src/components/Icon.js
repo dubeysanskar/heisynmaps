@@ -28,6 +28,7 @@ const PATHS = {
   server: "M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01",
   card: "M3 6h18v12H3zM3 10h18M7 15h3",
   map: "M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14",
+  mail: "M3 6h18v12H3zM3 7l9 6 9-6",
 };
 
 export default function Icon({ name, size = 18, className = "", strokeWidth = 1.9 }) {

@@ -1,6 +1,8 @@
 import { CATEGORIES, search } from "@/lib/engines/photon";
 import { ApiError, apiRoute, number, preflight } from "@/lib/gateway";
 import { haversine } from "@/lib/geo";
+import { hasPincodeData } from "@/lib/pincode";
+import { addPincode } from "@/lib/search";
 
 export const OPTIONS = preflight;
 
@@ -21,5 +23,6 @@ export const GET = apiRoute("search.nearby", async (request) => {
     .map((r) => ({ ...r, distance_m: Math.round(haversine(lat, lon, r.lat, r.lon)) }))
     .filter((r) => r.distance_m <= radius)
     .sort((a, b) => a.distance_m - b.distance_m);
+  if (await hasPincodeData()) await Promise.all(results.map(addPincode));
   return { category: url.searchParams.get("category"), radius_m: radius, results };
 });
