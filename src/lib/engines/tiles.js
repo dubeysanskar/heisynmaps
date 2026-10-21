@@ -52,7 +52,8 @@ export async function tileJson(tileUrlTemplate) {
   return {
     tilejson: "3.0.0",
     name: metadata.name || "HeisynMaps",
-    attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>',
+    // Tiles in the OpenMapTiles schema must credit OpenMapTiles (CC-BY) as well as OpenStreetMap (ODbL).
+    attribution: '<a href="https://openmaptiles.org/">© OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>',
     tiles: [tileUrlTemplate],
     minzoom: header.minZoom,
     maxzoom: header.maxZoom,

@@ -175,7 +175,7 @@ export const ENDPOINTS = [
     response: {
       tilejson: "3.0.0",
       name: "HeisynMaps",
-      attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>',
+      attribution: '<a href="https://openmaptiles.org/">© OpenMapTiles</a> <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>',
       tiles: ["https://…/api/v1/tiles/{z}/{x}/{y}.pbf?key=…"],
       minzoom: 0,
       maxzoom: 14,

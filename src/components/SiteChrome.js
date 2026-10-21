@@ -98,6 +98,9 @@ export function SiteFooter() {
           <a href="https://www.openstreetmap.org/copyright" className="block hover:text-slate-900">
             © OpenStreetMap contributors
           </a>
+          <a href="https://openmaptiles.org/" className="block hover:text-slate-900">
+            © OpenMapTiles (tile schema)
+          </a>
           <a href="https://www.indiapost.gov.in/digipin" className="block hover:text-slate-900">
             DIGIPIN by India Post
           </a>

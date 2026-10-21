@@ -650,10 +650,10 @@ const eta = opt.route.legs.reduce((acc, leg, i) => {
       </UL>
       <H2 id="attribution">Attribution</H2>
       <P>
-        Map data is © OpenStreetMap contributors and available under the Open Database License. Anywhere you show our map or data,
-        keep a visible credit: “© OpenStreetMap contributors”, linked to{" "}
-        <A href="https://www.openstreetmap.org/copyright">openstreetmap.org/copyright</A>. The MapLibre attribution control does this
-        for you. You may collapse it behind an “i” button.
+        Map data is © OpenStreetMap contributors and available under the Open Database License, and our vector tiles use the
+        OpenMapTiles schema (CC-BY). Anywhere you show our map, keep a visible credit: “© OpenMapTiles © OpenStreetMap
+        contributors”, linked to <A href="https://www.openstreetmap.org/copyright">openstreetmap.org/copyright</A>. The MapLibre
+        attribution control does this for you from our tiles. You may collapse it behind an “i” button.
       </P>
       <H2 id="privacy">Privacy</H2>
       <UL>

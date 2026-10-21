@@ -40,11 +40,17 @@ const started = Date.now();
 const python = process.env.PYTHON || (process.platform === "win32" ? "python" : "python3");
 
 // ---------- 1. extract ----------
-console.log(`Extracting places from ${path.basename(pbf)} …`);
-const ex = spawnSync(python, ["scripts/data/osm_places.py", pbf, raw, path.join(work, "index")], { stdio: "inherit" });
-if (ex.status !== 0) {
-  console.error("Extraction failed. It needs pyosmium: pip install osmium");
-  process.exit(ex.status || 1);
+// --reuse skips extraction when the raw file is newer than the extract (e.g. after tuning step 2).
+const reusable = args.reuse && fs.existsSync(raw) && fs.statSync(raw).mtimeMs > fs.statSync(pbf).mtimeMs;
+if (reusable) {
+  console.log(`Reusing extracted places from ${raw}`);
+} else {
+  console.log(`Extracting places from ${path.basename(pbf)} …`);
+  const ex = spawnSync(python, ["scripts/data/osm_places.py", pbf, raw, path.join(work, "index")], { stdio: "inherit" });
+  if (ex.status !== 0) {
+    console.error("Extraction failed. It needs pyosmium: pip install osmium");
+    process.exit(ex.status || 1);
+  }
 }
 
 // ---------- 2. hierarchy ----------
@@ -64,8 +70,9 @@ function grid() {
       if (!cells.has(k)) cells.set(k, []);
       cells.get(k).push(p);
     },
-    // weigh(p) > 1 lets important places win from farther away (score = distance / weight).
-    nearest(lat, lon, maxKm, skip, weigh = () => 1) {
+    // weigh(p) > 1 lets important places win from farther away (score = distance / weight);
+    // accept(p) filters candidates (e.g. same state only).
+    nearest(lat, lon, maxKm, skip, weigh = () => 1, accept = () => true) {
       const rings = Math.ceil(maxKm / (CELL * 111)) + 1;
       const ci = Math.floor(lat / CELL);
       const cj = Math.floor(lon / CELL);
@@ -73,7 +80,7 @@ function grid() {
       for (let i = ci - rings; i <= ci + rings; i++) {
         for (let j = cj - rings; j <= cj + rings; j++) {
           for (const p of cells.get(`${i}:${j}`) || []) {
-            if (p === skip) continue;
+            if (p === skip || !accept(p)) continue;
             const d = km(lat, lon, p.lat, p.lon);
             const score = d / weigh(p);
             if (d <= maxKm && (!best || score < best.score)) best = { p, score };
@@ -90,19 +97,6 @@ async function* lines(file) {
   for await (const line of rl) if (line) yield JSON.parse(line);
 }
 
-const bigCities = grid(); // place=city
-const towns = grid(); // town, municipality
-const localities = grid();
-const byId = new Map();
-for await (const r of lines(raw)) {
-  if (r.key !== "place") continue;
-  const p = { name: r.name, lat: r.lat, lon: r.lon, value: r.value, imp: r.imp };
-  byId.set(`${r.t}${r.id}`, p);
-  if (r.value === "city") bigCities.add(p);
-  else if (["town", "municipality"].includes(r.value)) towns.add(p);
-  else if (["suburb", "borough", "quarter", "neighbourhood", "village", "hamlet"].includes(r.value)) localities.add(p);
-}
-
 const offices = grid();
 try {
   const db = await getDb();
@@ -113,23 +107,39 @@ try {
   console.warn("No PIN code data found; districts and states will be missing. Run npm run data:pincodes first.");
 }
 
+const bigCities = grid(); // place=city
+const towns = grid(); // town, municipality
+const localities = grid();
+const byId = new Map();
+for await (const r of lines(raw)) {
+  if (r.key !== "place") continue;
+  const p = { name: r.name, lat: r.lat, lon: r.lon, value: r.value, imp: r.imp };
+  p.state = offices.nearest(r.lat, r.lon, 40)?.state || null; // which state the place itself is in
+  byId.set(`${r.t}${r.id}`, p);
+  if (r.value === "city") bigCities.add(p);
+  else if (["town", "municipality"].includes(r.value)) towns.add(p);
+  else if (["suburb", "borough", "quarter", "neighbourhood", "village", "hamlet"].includes(r.value)) localities.add(p);
+}
+
 console.log("Adding address hierarchy …");
 const outStream = fs.createWriteStream(enriched, { encoding: "utf8" });
 let n = 0;
 for await (const r of lines(raw)) {
   const self = byId.get(`${r.t}${r.id}`);
   const isCity = r.key === "place" && ["city", "town", "municipality", "state", "district", "county"].includes(r.value);
+  const office = offices.nearest(r.lat, r.lon, 40);
+  // Only a city/town in the same state can be the address's city (Dwarka is Delhi, not Gurgaon).
+  const sameState = (p) => !office?.state || !p.state || p.state === office.state;
   const locality = r.addr_suburb || (isCity ? null : localities.nearest(r.lat, r.lon, 2.5, self)?.name) || null;
   // A real city within 25 km beats a nearer small town ("Kirti Nagar" is in Delhi, not Delhi Cantonment).
   const city =
     r.addr_city ||
     (isCity
       ? null
-      : (bigCities.nearest(r.lat, r.lon, 25, self, (p) => (1 + p.imp * 3) ** 2) ||
-          towns.nearest(r.lat, r.lon, 10, self) ||
+      : (bigCities.nearest(r.lat, r.lon, 25, self, (p) => (1 + p.imp * 3) ** 2, sameState) ||
+          towns.nearest(r.lat, r.lon, 10, self, undefined, sameState) ||
           localities.nearest(r.lat, r.lon, 3, self))?.name) ||
     null;
-  const office = offices.nearest(r.lat, r.lon, 40);
   const name = { name: r.name };
   for (const [k, v] of Object.entries(r.names || {})) name[k === "local" ? "loc_name" : k] = v;
   const [w, s, e, nth] = r.bbox;
