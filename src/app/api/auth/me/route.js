@@ -1,7 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
 
+// Always 200 so signed-out visitors don't produce console errors; check `session`.
 export async function GET() {
-  const session = await getSessionUser();
-  if (!session) return Response.json({ error: { message: "Not signed in" } }, { status: 401 });
-  return Response.json(session);
+  return Response.json({ session: await getSessionUser() });
 }

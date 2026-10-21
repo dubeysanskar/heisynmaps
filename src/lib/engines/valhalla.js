@@ -1,4 +1,5 @@
 import polyline from "@mapbox/polyline";
+import { fetchWithRetry, lru } from "../cache";
 import { config, engineUrl } from "../config";
 import { ApiError } from "../gateway";
 
@@ -34,10 +35,22 @@ export function costingFor(profile = "car", { truck, avoid } = {}) {
   return { costing, costing_options: Object.keys(options).length ? { [costing]: options } : undefined };
 }
 
+// Routing answers for identical requests are reused for a few minutes.
+const routeCache = lru("valhalla", { max: 2000, ttlMs: 5 * 60_000 });
+
 export async function valhalla(action, body) {
+  const cacheKey = `${action}:${JSON.stringify(body)}`;
+  const cached = routeCache.get(cacheKey);
+  if (cached) return cached;
+  const data = await callValhalla(action, body);
+  routeCache.set(cacheKey, data);
+  return data;
+}
+
+async function callValhalla(action, body) {
   let res;
   try {
-    res = await fetch(`${engineUrl("valhalla")}/${action}`, {
+    res = await fetchWithRetry(`${engineUrl("valhalla")}/${action}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "User-Agent": config.userAgent },
       body: JSON.stringify(body),
@@ -45,6 +58,9 @@ export async function valhalla(action, body) {
     });
   } catch (err) {
     throw new ApiError(502, "routing_unavailable", `Routing engine unreachable: ${err.message}`);
+  }
+  if (res.status === 429 || res.status === 503) {
+    throw new ApiError(503, "routing_busy", "Routing is busy right now. Please try again in a moment.");
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {

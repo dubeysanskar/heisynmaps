@@ -1,3 +1,4 @@
+import { fetchWithRetry, lru } from "../cache";
 import { config, engineUrl } from "../config";
 import { ApiError } from "../gateway";
 import { tryDigipin } from "../digipin";
@@ -23,16 +24,26 @@ async function photon(pathname, params) {
     if (v === undefined || v === null || v === "") continue;
     for (const item of Array.isArray(v) ? v : [v]) url.searchParams.append(k, String(item));
   }
+  const cached = searchCache.get(url.href);
+  if (cached) return cached;
   let res;
   try {
-    res = await fetch(url, { headers: { "User-Agent": config.userAgent }, signal: AbortSignal.timeout(10000) });
+    res = await fetchWithRetry(url, { headers: { "User-Agent": config.userAgent }, signal: AbortSignal.timeout(10000) });
   } catch (err) {
     throw new ApiError(502, "search_unavailable", `Search engine unreachable: ${err.message}`);
   }
+  if (res.status === 429 || res.status === 503) {
+    throw new ApiError(503, "search_busy", "Search is busy right now. Please try again in a moment.");
+  }
   if (!res.ok) throw new ApiError(502, "search_error", `Search engine returned ${res.status}`);
   const data = await res.json();
-  return (data.features || []).map(normalizeFeature);
+  const results = (data.features || []).map(normalizeFeature);
+  searchCache.set(url.href, results);
+  return results;
 }
+
+// Identical searches (autocomplete prefixes, popular places) are served from memory.
+const searchCache = lru("photon", { max: 5000, ttlMs: 30 * 60_000 });
 
 export function search(q, { lat, lon, limit = 8, bbox, include } = {}) {
   return photon("/api", {

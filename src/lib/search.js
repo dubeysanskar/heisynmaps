@@ -62,7 +62,8 @@ export async function runSearch(orgId, { q, lat, lon, limit }) {
   osm = [...osm.filter(near), ...osm.filter((r) => !near(r))];
   for (const r of osm) {
     if (results.length >= limit) break;
-    results.push(r);
+    // Photon can return the same OSM object twice (e.g. node + address entry).
+    if (!results.some((x) => x.id === r.id)) results.push(r);
   }
   return results.slice(0, limit);
 }

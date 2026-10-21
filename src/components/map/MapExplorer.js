@@ -35,6 +35,9 @@ const THEMES = [
   { id: "logistics", label: "Logistics" },
 ];
 
+// Map features a click can select: POI dots and labels, and place names.
+const CLICKABLE_LAYERS = ["poi-dot", "poi-label", "place-neighbourhood", "place-village", "place-town", "place-city"];
+
 const STOP_COLORS = ["#0f766e", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#0891b2", "#65a30d", "#9333ea", "#be123c", "#334155"];
 const letter = (i) => String.fromCharCode(65 + i);
 
@@ -198,6 +201,21 @@ export default function MapExplorer({ apiKey }) {
       map.on("contextmenu", (e) => {
         setMenu({ x: e.point.x, y: e.point.y, lat: e.lngLat.lat, lon: e.lngLat.lng });
       });
+      // Touch screens have no right-click: a 550ms press without moving opens the same menu.
+      let pressTimer = null;
+      const cancelPress = () => {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+      };
+      map.on("touchstart", (e) => {
+        cancelPress();
+        if (e.originalEvent.touches.length !== 1) return;
+        pressTimer = setTimeout(() => {
+          setMenu({ x: e.point.x, y: e.point.y, lat: e.lngLat.lat, lon: e.lngLat.lng });
+          navigator.vibrate?.(15);
+        }, 550);
+      });
+      for (const ev of ["touchend", "touchcancel", "touchmove", "movestart", "zoomstart"]) map.on(ev, cancelPress);
       map.on("click", (e) => {
         setMenu(null);
         handlersRef.current.onMapClick?.(e);
@@ -211,7 +229,7 @@ export default function MapExplorer({ apiKey }) {
         window.history.replaceState(null, "", url);
       });
       map.on("click", "nk-route-alt", (e) => setActiveRoute(e.features[0].properties.idx));
-      for (const layer of ["nk-route-alt", "nk-nearby", "poi-dot"]) {
+      for (const layer of ["nk-route-alt", "nk-nearby", ...CLICKABLE_LAYERS]) {
         map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
         map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
       }
@@ -306,8 +324,13 @@ export default function MapExplorer({ apiKey }) {
 
   handlersRef.current.onMapClick = (e) => {
     const map = mapRef.current;
-    const hits = map.queryRenderedFeatures(e.point, { layers: ["nk-nearby", "poi-dot"].filter((l) => map.getLayer(l)) });
-    const hit = hits[0];
+    // A few pixels of slack so small dots and labels are easy to hit.
+    const box = [
+      [e.point.x - 6, e.point.y - 6],
+      [e.point.x + 6, e.point.y + 6],
+    ];
+    const hits = map.queryRenderedFeatures(box, { layers: ["nk-nearby", ...CLICKABLE_LAYERS].filter((l) => map.getLayer(l)) });
+    const hit = hits.find((h) => h.layer.id === "nk-nearby") || hits.find((h) => h.geometry.type === "Point");
     if (!hit) return;
     if (hit.layer.id === "nk-nearby") {
       const place = overlayRef.current.nearbyResults?.[hit.properties.idx];
@@ -316,12 +339,13 @@ export default function MapExplorer({ apiKey }) {
     }
     const [lon, lat] = hit.geometry.coordinates;
     const p = hit.properties;
+    const isPlace = hit.sourceLayer === "place";
     select(
       {
-        id: `poi:${p.name}:${lon}`,
+        id: `${hit.sourceLayer}:${p.name}:${lon}`,
         name: p["name:en"] || p.name_en || p.name || "Point of interest",
-        label: [p.class, p.subclass].filter((v, i, a) => v && a.indexOf(v) === i).join(" · "),
-        category: `poi:${p.class}`,
+        label: [p.class, p.subclass].filter((v, i, a) => v && a.indexOf(v) === i).join(" · ").replace(/_/g, " "),
+        category: `${isPlace ? "place" : "poi"}:${p.class}`,
         lat,
         lon,
       },

@@ -44,16 +44,19 @@ export async function createUser({ email, password, name, orgName }) {
   }
   const orgId = newId("org");
   const userId = newId("usr");
+  // The first account on a fresh install, and anyone in ADMIN_EMAILS, is a platform admin.
+  const hasAdmin = await db.get("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+  const role = !hasAdmin || adminEmails().includes(normalized) ? "admin" : "member";
   await db.run("INSERT INTO orgs (id, name, plan, created_at) VALUES (?, ?, 'free', ?)", [
     orgId,
     orgName || `${name || normalized}'s team`,
     now(),
   ]);
   await db.run(
-    "INSERT INTO users (id, org_id, email, name, password_hash, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    [userId, orgId, normalized, name || null, hashPassword(password), now()]
+    "INSERT INTO users (id, org_id, email, name, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [userId, orgId, normalized, name || null, hashPassword(password), role, now()]
   );
-  return { id: userId, orgId };
+  return { id: userId, orgId, role };
 }
 
 export async function authenticateUser(email, password) {
@@ -99,16 +102,32 @@ export async function getSessionUser() {
   if (!token) return null;
   const db = await getDb();
   const row = await db.get(
-    `SELECT u.id, u.email, u.name, u.org_id, o.name AS org_name, o.plan, s.expires_at
+    `SELECT u.id, u.email, u.name, u.role, u.org_id, o.name AS org_name, o.plan, o.status AS org_status, s.expires_at
        FROM sessions s JOIN users u ON u.id = s.user_id JOIN orgs o ON o.id = u.org_id
       WHERE s.id = ?`,
     [sha256(token)]
   );
   if (!row || row.expires_at < now()) return null;
+  const role = row.role === "admin" || adminEmails().includes(row.email) ? "admin" : "member";
   return {
-    user: { id: row.id, email: row.email, name: row.name },
-    org: { id: row.org_id, name: row.org_name, plan: row.plan },
+    user: { id: row.id, email: row.email, name: row.name, role },
+    org: { id: row.org_id, name: row.org_name, plan: row.plan, status: row.org_status },
   };
+}
+
+// For /api/admin/* route handlers: returns the session, or a 401/403 Response.
+export async function requireAdmin() {
+  const session = await getSessionUser();
+  if (!session) return { error: Response.json({ error: { message: "Not signed in" } }, { status: 401 }) };
+  if (session.user.role !== "admin") return { error: Response.json({ error: { message: "Admins only" } }, { status: 403 }) };
+  return { session };
+}
+
+function adminEmails() {
+  return String(process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 export function sha256(value) {

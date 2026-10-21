@@ -18,3 +18,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `maplibre-gl.css` is unlayered and sets `position: relative` on the map element — size a wrapper div, not the map container itself.
 - Overlays on the map must be re-added after `setStyle`; use the `style.load` event (not `isStyleLoaded()`, which waits for tiles).
 - `npm run smoke` runs an end-to-end check of every endpoint against a running server.
+- A layout does not stop its page from rendering: pages run in parallel with the layout, so every page under /console or /admin must re-check the session itself (`if (!session) return null`).
+- Client components can import plain data from `src/lib/catalog.js`, but editing that file forces a full reload in dev — expected.
+- DB changes go in `MIGRATIONS` in `src/lib/db.js` (append-only). Mutations of keys or org plan/status must call `invalidateKeyCache()`; admin actions call `audit()`.
+- `npm run smoke` covers key restrictions (scopes, quotas, IP, origin, disable, rotate) as well as every endpoint.
+

@@ -4,7 +4,9 @@ Our own map platform and **maps API for logistics**: a Mappls / Google Maps Plat
 
 - **Consumer map** at `/maps`: search, place cards with DIGIPIN, car/bike/scooter/truck/walk directions, multi-stop routing with "optimise order", right-click "what's here", reachability isochrones, light/dark/logistics themes, 3D buildings.
 - **Developer API** at `/api/v1/*`: map styles and tiles, autocomplete, geocode, reverse, nearby, truck routing, distance matrix, isochrones, route optimisation (TSP, and VRP via VROOM), snap-to-road, DIGIPIN, MapPIN saved places, geofences.
-- **SaaS layer**: signup, server and browser API keys (origin-locked), per-key rate limits, per-SKU daily metering, usage console, pricing and docs.
+- **Developer console** at `/console`: overview, API key creation and management (server/browser keys, website or IP restrictions, per-API scopes, per-key rate limit, daily quota, expiry, rotate, disable, delete), usage by API and by key, 14-day request logs, a live API playground, org settings.
+- **Admin dashboard** at `/admin` (platform staff): KPIs and revenue estimate, organisations (plan, suspend, rate/quota overrides), users and roles, every API key, per-API switches and prices, global request logs, engine health, audit log.
+- **Docs** at `/docs`: quickstart, 8 guides (auth, errors, limits, SDKs, DIGIPIN, logistics recipes, coverage) and a reference page per endpoint with code samples in four languages and a live "Try it".
 
 Read **[docs/PRD.md](docs/PRD.md)** first. It covers the research, the stack decisions, compliance (India boundary, ODbL), pricing and the roadmap.
 
@@ -30,6 +32,10 @@ npm run smoke          # in a second terminal: end-to-end test of every API endp
 ```
 
 No Docker is needed on a laptop. When `VALHALLA_URL`, `PHOTON_URL` or the PMTiles file are missing, the gateway uses public demo services: valhalla1.openstreetmap.de, photon.komoot.io and OpenFreeMap tiles. **These are for development only.** `GET /api/v1/status` shows which engines are self-hosted.
+
+**Admin access:** the first account created on a fresh database becomes the platform admin. Promote others with `npm run make-admin -- someone@company.com` or list them in `ADMIN_EMAILS`.
+
+Dev mode is slow on a OneDrive-synced folder (each page compiles on first visit). For a fast local run use `npm run preview` (production build + start).
 
 To get an API key, open `/console`, sign up and create a key. Then:
 
@@ -70,7 +76,12 @@ src/app/maps                    consumer map explorer
 src/app/docs, pricing, console  developer-facing pages
 src/app/api/v1/*                public API (each route wraps lib/gateway.js)
 src/app/api/auth, api/console   session auth, key management, usage
-src/lib/gateway.js              key auth, origin checks, rate limits, metering, CORS, errors
+src/app/console, admin          customer console and staff admin (server pages + client components)
+src/lib/gateway.js              auth (key or console session), scopes, origin/IP checks, admin API switches,
+                                rate limits, quotas, metering, request log, CORS, errors
+src/lib/keys.js                 key create/update/rotate/revoke and the cached key lookup
+src/lib/console.js, admin.js    read models for the two dashboards
+src/lib/settings.js             admin-editable settings (per-API on/off and prices)
 src/lib/engines/                valhalla.js, photon.js, tiles.js (PMTiles)
 src/lib/catalog.js              plans, SKUs, prices and endpoint docs (one source of truth)
 src/lib/style.js                MapLibre style generator (light, dark, logistics)

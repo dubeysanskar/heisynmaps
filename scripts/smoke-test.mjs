@@ -104,9 +104,46 @@ console.log(`     geofence: truck-7 in ${check?.results?.[0]?.inside?.length}, t
 await call("DELETE", `/api/v1/geofences/${fence?.geofence?.id}`, { key: k });
 await call("DELETE", `/api/v1/places/${pin}`, { key: k });
 
+// --- key restrictions ---
+const limited = (
+  await call("POST", "/api/console/keys", {
+    body: { name: "limited", kind: "server", scopes: ["search"], dailyQuota: 2, rpmLimit: 50 },
+  })
+).key;
+await call("GET", "/api/v1/digipin?lat=28.6&lon=77.2", { key: limited.key, expect: [403] }); // scope_denied
+await call("GET", "/api/v1/geocode?q=noida", { key: limited.key });
+await call("GET", "/api/v1/geocode?q=delhi", { key: limited.key });
+await call("GET", "/api/v1/geocode?q=gurugram", { key: limited.key, expect: [429] }); // daily quota
+const ipKey = (await call("POST", "/api/console/keys", { body: { name: "ip", kind: "server", allowedIps: "203.0.113.7" } })).key;
+await call("GET", "/api/v1/digipin?lat=28.6&lon=77.2", { key: ipKey.key, expect: [403] }); // ip_not_allowed
+const web = (
+  await call("POST", "/api/console/keys", { body: { name: "web", kind: "browser", allowedOrigins: "https://app.example.com" } })
+).key;
+const okOrigin = await fetch(`${BASE}/api/v1/digipin?lat=28.6&lon=77.2&key=${web.key}`, { headers: { Origin: "https://app.example.com" } });
+const badOrigin = await fetch(`${BASE}/api/v1/digipin?lat=28.6&lon=77.2&key=${web.key}`, { headers: { Origin: "https://evil.example" } });
+const originOk = okOrigin.status === 200 && badOrigin.status === 403;
+if (!originOk) failures++;
+console.log(`${originOk ? "PASS" : "FAIL"} browser key origin check (${okOrigin.status} allowed / ${badOrigin.status} other site)`);
+await call("PATCH", `/api/console/keys/${ipKey.id}`, { body: { disabled: true } });
+await call("GET", "/api/v1/digipin?lat=28.6&lon=77.2", { key: ipKey.key, expect: [403] }); // key_disabled
+const rotated = (await call("POST", `/api/console/keys/${web.id}/rotate`)).key;
+const oldGone = await fetch(`${BASE}/api/v1/digipin?lat=28.6&lon=77.2&key=${web.key}`, { headers: { Origin: "https://app.example.com" } });
+const newWorks = await fetch(`${BASE}/api/v1/digipin?lat=28.6&lon=77.2&key=${rotated.key}`, { headers: { Origin: "https://app.example.com" } });
+const rotateOk = oldGone.status === 401 && newWorks.status === 200;
+if (!rotateOk) failures++;
+console.log(`${rotateOk ? "PASS" : "FAIL"} rotation (old ${oldGone.status}, new ${newWorks.status})`);
+for (const id of [limited.id, ipKey.id, web.id]) await call("DELETE", `/api/console/keys/${id}`);
+
+// --- console session (playground) auth ---
+const pg = await fetch(`${BASE}/api/v1/digipin?lat=28.6&lon=77.2`, { headers: { Cookie: cookie, "X-Naksha-Console": "1" } });
+if (pg.status !== 200) failures++;
+console.log(`${pg.status === 200 ? "PASS" : "FAIL"} ${pg.status} playground call with session`);
+
 await new Promise((r) => setTimeout(r, 2500)); // let buffered metering flush
 const usage = await call("GET", "/api/console/usage");
 console.log(`     metered SKUs this month: ${usage?.monthToDate?.length}`);
+const logs = await call("GET", "/api/console/logs?status=4xx&limit=20");
+console.log(`     4xx requests logged: ${logs?.rows?.length}`);
 
 console.log(failures ? `\n${failures} check(s) failed` : "\nAll checks passed");
 process.exit(failures ? 1 : 0);

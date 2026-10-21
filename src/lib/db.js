@@ -70,7 +70,76 @@ CREATE TABLE IF NOT EXISTS geofences (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS geofences_org ON geofences(org_id);
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  id INTEGER PRIMARY KEY,
+  applied_at TEXT NOT NULL
+);
 `;
+
+// Append-only. Each entry runs once per database, in order.
+const MIGRATIONS = [
+  {
+    id: 1,
+    name: "roles, org controls, key restrictions, request log, settings, audit log",
+    statements: [
+      "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'member'",
+      "ALTER TABLE orgs ADD COLUMN status TEXT NOT NULL DEFAULT 'active'",
+      "ALTER TABLE orgs ADD COLUMN rpm_override INTEGER",
+      "ALTER TABLE orgs ADD COLUMN quota_override INTEGER",
+      "ALTER TABLE orgs ADD COLUMN notes TEXT",
+      "ALTER TABLE api_keys ADD COLUMN scopes TEXT NOT NULL DEFAULT ''",
+      "ALTER TABLE api_keys ADD COLUMN allowed_ips TEXT NOT NULL DEFAULT ''",
+      "ALTER TABLE api_keys ADD COLUMN rpm_limit INTEGER",
+      "ALTER TABLE api_keys ADD COLUMN daily_quota INTEGER",
+      "ALTER TABLE api_keys ADD COLUMN expires_at TEXT",
+      "ALTER TABLE api_keys ADD COLUMN disabled_at TEXT",
+      `CREATE TABLE IF NOT EXISTS request_log (
+        ts TEXT NOT NULL,
+        org_id TEXT,
+        key_id TEXT,
+        sku TEXT,
+        method TEXT NOT NULL,
+        path TEXT NOT NULL,
+        status INTEGER NOT NULL,
+        latency_ms INTEGER NOT NULL,
+        ip TEXT,
+        error_code TEXT
+      )`,
+      "CREATE INDEX IF NOT EXISTS request_log_ts ON request_log(ts)",
+      "CREATE INDEX IF NOT EXISTS request_log_org ON request_log(org_id, ts)",
+      `CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`,
+      `CREATE TABLE IF NOT EXISTS audit_log (
+        ts TEXT NOT NULL,
+        actor_id TEXT,
+        actor_email TEXT,
+        action TEXT NOT NULL,
+        target TEXT,
+        details TEXT
+      )`,
+      "CREATE INDEX IF NOT EXISTS audit_log_ts ON audit_log(ts)",
+    ],
+  },
+];
+
+async function migrate(db) {
+  const done = new Set((await db.all("SELECT id FROM schema_migrations")).map((r) => Number(r.id)));
+  for (const m of MIGRATIONS) {
+    if (done.has(m.id)) continue;
+    for (const sql of m.statements) {
+      try {
+        await db.exec(sql);
+      } catch (err) {
+        // A column may already exist if a previous run was interrupted.
+        if (!/duplicate column|already exists/i.test(err.message)) throw err;
+      }
+    }
+    await db.run("INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)", [m.id, now()]);
+  }
+}
 
 export function getDb() {
   // Cached on globalThis so dev hot-reloads don't open a new connection each time.
@@ -91,13 +160,15 @@ async function openSqlite(file) {
   sqlite.pragma("journal_mode = WAL");
   sqlite.pragma("busy_timeout = 5000");
   sqlite.exec(SCHEMA);
-  return {
+  const db = {
     kind: "sqlite",
     all: async (sql, params = []) => sqlite.prepare(sql).all(...params),
     get: async (sql, params = []) => sqlite.prepare(sql).get(...params),
     run: async (sql, params = []) => ({ changes: sqlite.prepare(sql).run(...params).changes }),
     exec: async (sql) => sqlite.exec(sql),
   };
+  await migrate(db);
+  return db;
 }
 
 async function openPostgres(url) {
@@ -117,6 +188,7 @@ async function openPostgres(url) {
     },
   };
   await db.exec(SCHEMA);
+  await migrate(db);
   return db;
 }
 
