@@ -3,8 +3,8 @@ import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { docsNav } from "@/lib/docs/nav";
 
 export const metadata = {
-  title: { default: "Docs — Naksha Maps", template: "%s — Naksha Maps docs" },
-  description: "Guides and API reference for Naksha's maps, search, routing, fleet and DIGIPIN APIs.",
+  title: { default: "Docs — HeisynMaps", template: "%s — HeisynMaps docs" },
+  description: "Guides and API reference for HeisynMaps's maps, search, routing, fleet and DIGIPIN APIs.",
 };
 
 export default function DocsLayout({ children }) {

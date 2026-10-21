@@ -6,18 +6,18 @@ import { engineHealth, envSummary, runtimeCaches } from "@/lib/admin";
 export default async function AdminEngines() {
   if (!(await adminSession())) return null;
   const [engines, env, caches] = await Promise.all([engineHealth(), envSummary(), runtimeCaches()]);
-  const fallbacks = Object.values(engines).filter((e) => e.mode === "public-fallback");
+  const missing = Object.values(engines).filter((e) => ["not-configured", "missing"].includes(e.mode));
 
   return (
     <>
       <PageHeader title="Engines" description="Live health of the map engines behind the API, probed when this page loads." />
       <div className="space-y-6 p-4 sm:p-6">
-        {fallbacks.length > 0 && (
+        {missing.length > 0 && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            <p className="font-medium">{fallbacks.map((e) => e.engine).join(", ")} running on public development fallbacks.</p>
+            <p className="font-medium">{missing.map((e) => e.engine).join(", ")} not set up yet.</p>
             <p className="mt-1">
-              Their fair-use policies forbid production traffic. Deploy <code>infra/docker-compose.yml</code>, set the engine URLs
-              and <code>REQUIRE_SELF_HOSTED=1</code> before onboarding paying customers.
+              Their API calls return 503 engine_not_configured. Run <code>npm run setup</code> and start the routing engine
+              (<code>npm run engine:routing</code>). HeisynMaps never falls back to third-party services.
             </p>
           </div>
         )}

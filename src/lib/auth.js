@@ -4,23 +4,23 @@ import path from "node:path";
 import { cookies } from "next/headers";
 import { getDb, newId, now } from "./db";
 
-export const SESSION_COOKIE = "naksha_session";
+export const SESSION_COOKIE = "heisyn_session";
 const SESSION_DAYS = 30;
 
 export function getSecret() {
-  if (process.env.NAKSHA_SECRET) return process.env.NAKSHA_SECRET;
+  if (process.env.HEISYN_SECRET) return process.env.HEISYN_SECRET;
   // Dev convenience: persist a generated secret next to the SQLite file.
   const file = path.resolve(/*turbopackIgnore: true*/ "data/.secret");
-  if (!globalThis.__nakshaSecret) {
+  if (!globalThis.__heisynSecret) {
     if (fs.existsSync(file)) {
-      globalThis.__nakshaSecret = fs.readFileSync(file, "utf8").trim();
+      globalThis.__heisynSecret = fs.readFileSync(file, "utf8").trim();
     } else {
       fs.mkdirSync(path.dirname(file), { recursive: true });
-      globalThis.__nakshaSecret = crypto.randomBytes(32).toString("hex");
-      fs.writeFileSync(file, globalThis.__nakshaSecret);
+      globalThis.__heisynSecret = crypto.randomBytes(32).toString("hex");
+      fs.writeFileSync(file, globalThis.__heisynSecret);
     }
   }
-  return globalThis.__nakshaSecret;
+  return globalThis.__heisynSecret;
 }
 
 export function hashPassword(password) {

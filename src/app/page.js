@@ -234,7 +234,7 @@ export default async function Home() {
             <div className="min-w-0 space-y-4">
               <pre className="overflow-x-auto rounded-xl bg-slate-900 p-4 text-[12.5px] leading-relaxed text-teal-100 ring-1 ring-white/10">
                 {`curl -X POST ${origin}/api/v1/route \\
-  -H "X-Api-Key: $NAKSHA_KEY" -H "Content-Type: application/json" \\
+  -H "X-Api-Key: $HEISYN_KEY" -H "Content-Type: application/json" \\
   -d '{
     "locations": [{"lat":28.5355,"lon":77.271}, {"lat":28.4595,"lon":77.0266}],
     "profile": "truck",

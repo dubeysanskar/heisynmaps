@@ -70,7 +70,7 @@ export default function AuthForm({ initialMode = "signup", title }) {
         </button>
       </form>
       <p className="mt-6 text-center text-sm text-slate-600">
-        {mode === "signup" ? "Already have an account?" : "New to Naksha?"}{" "}
+        {mode === "signup" ? "Already have an account?" : "New to HeisynMaps?"}{" "}
         <button onClick={() => setMode(mode === "signup" ? "login" : "signup")} className="font-medium text-teal-700 hover:underline">
           {mode === "signup" ? "Sign in" : "Create one"}
         </button>

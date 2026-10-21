@@ -4,7 +4,7 @@ import { API_GROUPS } from "./catalog";
 import { getDb, newId, now } from "./db";
 import { getSecret, sha256 } from "./auth";
 
-export const SYSTEM_ORG = { id: "org_system", name: "Naksha first-party", plan: "system" };
+export const SYSTEM_ORG = { id: "org_system", name: "HeisynMaps first-party", plan: "system" };
 const ALPHABET = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 function randomToken(length) {
@@ -154,7 +154,7 @@ export function firstPartyKey() {
 
 // ---------- lookup (cached briefly; every mutation clears the cache) ----------
 
-const keyCache = (globalThis.__nakshaKeyCache ??= new Map());
+const keyCache = (globalThis.__heisynKeyCache ??= new Map());
 const KEY_TTL_MS = 30_000;
 
 export function invalidateKeyCache() {

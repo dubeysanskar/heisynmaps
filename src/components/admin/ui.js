@@ -37,7 +37,6 @@ const BADGE = {
   enterprise: "bg-indigo-50 text-indigo-800 ring-indigo-200",
   system: "bg-sky-50 text-sky-800 ring-sky-200",
   "self-hosted": "bg-emerald-50 text-emerald-800 ring-emerald-200",
-  "public-fallback": "bg-amber-50 text-amber-800 ring-amber-200",
   "built-in": "bg-emerald-50 text-emerald-800 ring-emerald-200",
   "not-configured": "bg-red-50 text-red-700 ring-red-200",
   missing: "bg-red-50 text-red-700 ring-red-200",
@@ -45,7 +44,6 @@ const BADGE = {
 
 const LABEL = {
   "self-hosted": "Self-hosted",
-  "public-fallback": "Third-party (dev)",
   "built-in": "Built-in",
   "not-configured": "Not configured",
   missing: "Data missing",

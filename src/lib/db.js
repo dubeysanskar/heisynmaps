@@ -186,14 +186,14 @@ async function migrate(db) {
 
 export function getDb() {
   // Cached on globalThis so dev hot-reloads don't open a new connection each time.
-  globalThis.__nakshaDb ??= open();
-  return globalThis.__nakshaDb;
+  globalThis.__heisynDb ??= open();
+  return globalThis.__heisynDb;
 }
 
 async function open() {
   const url = process.env.DATABASE_URL;
   if (url && /^postgres(ql)?:\/\//.test(url)) return openPostgres(url);
-  return openSqlite(process.env.SQLITE_PATH || "data/naksha.db");
+  return openSqlite(process.env.SQLITE_PATH || "data/heisyn.db");
 }
 
 async function openSqlite(file) {

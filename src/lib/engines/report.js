@@ -5,8 +5,8 @@ import * as local from "./localsearch";
 import { hasLocalTiles } from "./tiles";
 
 // One view of every engine: what runs it and whether it still depends on a third party.
-// mode: built-in (inside the app) · self-hosted (our server) · public-fallback (third party, dev only)
-//       · not-configured · disabled · missing
+// mode: built-in (inside the app) · self-hosted (our own server) · not-configured · disabled · missing.
+// There is no third-party mode: the app has no code path to anyone else's servers.
 
 async function probe(url) {
   const started = Date.now();
@@ -49,16 +49,22 @@ export async function engineReport() {
   const engines = {
     routing: { engine: "Valhalla", mode: engineMode("valhalla"), host: hostOf(valhalla), ...routingProbe },
     search: searchStats
-      ? { engine: "Naksha search index", mode: "built-in", ok: true, places: searchStats.places, built_at: searchStats.builtAt }
+      ? { engine: "HeisynMaps search index", mode: "built-in", ok: true, places: searchStats.places, built_at: searchStats.builtAt }
       : { engine: "Photon", mode: engineMode("photon"), host: hostOf(photon), ...searchProbe },
-    tiles: { engine: "PMTiles", mode: hasLocalTiles() ? "self-hosted" : config.requireSelfHosted ? "not-configured" : "public-fallback", ok: true },
+    tiles: { engine: "PMTiles", mode: hasLocalTiles() ? "self-hosted" : "not-configured", ok: hasLocalTiles() },
     fonts: { engine: "Map fonts", mode: fontsMode(), ok: true },
     pincodes: { engine: "India Post PIN codes", mode: pins ? "built-in" : "missing", ok: pins },
     optimizer: { engine: "VROOM", mode: engineMode("vroom"), host: config.vroomUrl ? hostOf(config.vroomUrl) : null, ...vroom },
     database: { engine: db.kind === "postgres" ? "Postgres" : "SQLite", mode: "self-hosted", ok: true },
   };
+  // Engines on a machine we don't list as ours. Only possible if an operator points *_URL elsewhere;
+  // list our own servers in HEISYN_OWN_HOSTS (comma-separated hostnames).
+  const ownHosts = String(process.env.HEISYN_OWN_HOSTS || "").split(",").map((h) => h.trim()).filter(Boolean);
   const thirdParty = Object.entries(engines)
-    .filter(([, e]) => e.mode === "public-fallback")
-    .map(([name, e]) => ({ name, engine: e.engine, host: e.host || null }));
-  return { engines, thirdParty };
+    .filter(([, e]) => e.host && !ownHosts.includes(e.host.split(":")[0]) && !/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1)/.test(e.host))
+    .map(([name, e]) => ({ name, engine: e.engine, host: e.host }));
+  const missing = Object.entries(engines)
+    .filter(([, e]) => ["not-configured", "missing"].includes(e.mode))
+    .map(([name]) => name);
+  return { engines, thirdParty, missing };
 }

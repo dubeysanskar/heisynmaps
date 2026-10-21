@@ -5,7 +5,7 @@ import { getDb, now } from "./db";
 // `api_overrides`: { [sku]: { disabled?: boolean, inrPer1k?: number, note?: string } }
 
 const TTL_MS = 15_000;
-const cache = (globalThis.__nakshaSettings ??= new Map());
+const cache = (globalThis.__heisynSettings ??= new Map());
 
 export async function getSetting(key, fallback = null) {
   const hit = cache.get(key);

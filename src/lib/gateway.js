@@ -83,7 +83,7 @@ async function authenticate(request, { checkOrigin }, seen = {}) {
 
   // The console playground and docs "Try it" call the API with the signed-in session.
   // The custom header can't be sent cross-site without a CORS preflight we don't allow.
-  if (!raw && request.headers.get("x-naksha-console") === "1") {
+  if (!raw && request.headers.get("x-heisyn-console") === "1") {
     const session = await getSessionUser();
     if (!session) throw new ApiError(401, "not_signed_in", "Sign in to use the playground, or pass an API key");
     seen.keyId = `console_${session.org.id}`;
@@ -219,7 +219,7 @@ export function ipAllowed(ip, allowed) {
 
 // ---------- rate limiting (fixed one-minute window, in memory per instance) ----------
 
-const windows = (globalThis.__nakshaRate ??= new Map());
+const windows = (globalThis.__heisynRate ??= new Map());
 
 function rateLimit(auth) {
   const planRpm = auth.rpmOverride ?? (PLANS[auth.plan] || PLANS.free).rpm;
@@ -244,7 +244,7 @@ function rateLimit(auth) {
 
 // ---------- quotas (in-memory counters seeded from usage_daily) ----------
 
-const counters = (globalThis.__nakshaCounters ??= new Map());
+const counters = (globalThis.__heisynCounters ??= new Map());
 
 async function counter(id, seed) {
   if (!counters.has(id)) {
@@ -292,7 +292,7 @@ async function checkQuotas(auth, sku) {
 
 // ---------- metering + request log (buffered, flushed every 2s) ----------
 
-const pending = (globalThis.__nakshaUsage ??= { counts: new Map(), keys: new Set(), logs: [], timer: null, pruned: 0 });
+const pending = (globalThis.__heisynUsage ??= { counts: new Map(), keys: new Set(), logs: [], timer: null, pruned: 0 });
 pending.logs ??= [];
 
 function schedule() {
@@ -314,7 +314,7 @@ function logRequest(request, auth, sku, response, started) {
   if (pending.logs.length > 5000) return; // shed load rather than grow without bound
   const url = new URL(request.url);
   let code = null;
-  if (response.status >= 400) code = response.headers.get("x-naksha-error") || null;
+  if (response.status >= 400) code = response.headers.get("x-heisyn-error") || null;
   pending.logs.push([
     new Date().toISOString(),
     auth?.orgId || null,
@@ -380,13 +380,14 @@ function toResponse(result) {
 }
 
 function errorResponse(err, cors) {
+  if (err?.notConfigured) err = new ApiError(503, "engine_not_configured", err.message);
   const status = err instanceof ApiError ? err.status : 500;
   const code = err instanceof ApiError ? err.code : "internal_error";
   const message = err instanceof ApiError ? err.message : "Something went wrong";
   if (!(err instanceof ApiError)) console.error(err);
   return Response.json(
     { error: { code, message } },
-    { status, headers: { ...cors, ...(err.headers || {}), "X-Naksha-Error": code } }
+    { status, headers: { ...cors, ...(err.headers || {}), "X-Heisyn-Error": code } }
   );
 }
 

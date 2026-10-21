@@ -25,7 +25,7 @@ export function extractPincode(text) {
 const cellKey = (lat, lon) => `${Math.floor(lat / CELL)}:${Math.floor(lon / CELL)}`;
 
 async function index() {
-  const cached = globalThis.__nakshaPinIndex;
+  const cached = globalThis.__heisynPinIndex;
   if (cached && Date.now() - cached.at < INDEX_TTL_MS) return cached;
   const db = await getDb();
   const [offices, boundaries, count] = await Promise.all([
@@ -45,7 +45,7 @@ async function index() {
     grid,
     boundaries: boundaries.map((b) => ({ pincode: b.pincode, box: [Number(b.min_lon), Number(b.min_lat), Number(b.max_lon), Number(b.max_lat)] })),
   };
-  globalThis.__nakshaPinIndex = built;
+  globalThis.__heisynPinIndex = built;
   return built;
 }
 

@@ -1,6 +1,6 @@
-# Naksha Maps — Product Requirements Document (PRD)
+# HeisynMaps — Product Requirements Document (PRD)
 
-> Working name: **Naksha** (नक्शा, "map"). Rename in `src/lib/brand.js`.
+> Product name: **HeisynMaps** (repo: github.com/dubeysanskar/heisynmaps). Brand strings live in `src/lib/brand.js`.
 > Status: v0.1 — 21 Oct 2026. Owner: dubeysanskar.
 > Scope: our own map platform plus API SaaS for logistics companies. It competes with Mappls (MapmyIndia), Google Maps Platform, Ola Maps and Delhivery Maps. Rollout order: **Delhi NCR → all of India → international.**
 
@@ -80,9 +80,9 @@ OSRM bakes one vehicle profile into a preprocessed graph. Logistics needs per-re
 | Delhi NCR (clipped bbox) | ~60 MB | ~150 MB | ~200 MB | use the India dump | 4 vCPU / 8 GB |
 | Northern zone (Geofabrik) | 206 MB | ~500 MB | ~600 MB | — | 4 vCPU / 16 GB |
 | All India | ~1.5 GB | ~3 GB | ~4 GB | ~6 GB | 8 vCPU / 32 GB / 100 GB NVMe |
-| Planet | ~80 GB | ~120 GB | ~100 GB | ~200 GB | 32 vCPU / 128 GB / 1 TB NVMe (or MapTiler/OpenFreeMap planet tiles) |
+| Planet | ~80 GB | ~120 GB | ~100 GB | ~200 GB | 32 vCPU / 128 GB / 1 TB NVMe |
 
-The machine must run Linux with Docker and Java 21+. The developer laptop only runs the Next.js app; see §9 "dev fallbacks".
+Builds need Java 21+ (a portable JRE is fine), Python with pyosmium and pyvalhalla, and Node. Docker is optional (production routing). A Windows laptop with 12 GB RAM builds Delhi NCR end to end.
 
 ## 5. Functional requirements
 
@@ -210,9 +210,9 @@ Overage per 1,000 calls (about 40–50% under Ola, and well under Google India):
    the OSM place export, India Post PIN data, Noto fonts. Refreshed weekly on the server.
 ```
 
-**Independence.** At runtime Naksha calls no third-party service: search, tiles, fonts and PIN codes run inside the app, routing runs on our own Valhalla (Docker on Linux, `pyvalhalla` natively on Windows/macOS). `npm run setup` downloads the open data once and builds every engine; `/api/v1/status` returns `"independent": true` and lists any `third_party` engine otherwise.
+**Independence.** At runtime HeisynMaps calls no third-party service: search, tiles, fonts and PIN codes run inside the app, routing runs on our own Valhalla (Docker on Linux, `pyvalhalla` natively on Windows/macOS). `npm run setup` downloads the open data once and builds every engine; `/api/v1/status` returns `"independent": true` and lists any `third_party` engine otherwise.
 
-**Development fallbacks** (only when an engine is not built, and never with `REQUIRE_SELF_HOSTED=1`): public Valhalla (`valhalla1.openstreetmap.de`), Photon (`photon.komoot.io`) and OpenFreeMap tiles/fonts. Their fair-use policies forbid production traffic.
+**No fallbacks.** The code has no path to anyone else's servers. A missing engine answers `503 engine_not_configured`. Data comes from non-profit and government sources first (OpenStreetMap France, data.gov.in), companies only as backup, and every download is archived with checksums so `npm run setup -- --offline` can rebuild everything without any provider (see `scripts/data/sources.mjs`).
 
 ## 10. Milestones
 
@@ -235,7 +235,8 @@ Overage per 1,000 calls (about 40–50% under Ola, and well under Google India):
 | Boundary depiction law | Launch blocker in §7; legal review before a public launch |
 | Valhalla matrix throughput at large fleet sizes | Cap at 50 × 50 in v1; add an OSRM car-matrix sidecar; cache by DIGIPIN cell |
 | Competitors' free tiers (Ola 100k/API) | Match the free tier; win on logistics features and on-prem |
-| Using the public demo services in production by mistake | `/status` flags fallbacks; a `REQUIRE_SELF_HOSTED=1` env var refuses to start the API on fallbacks |
+| A data provider (mirror, company) stops serving files | Several sources per dataset (non-profit/government first); everything archived with SHA-256; `npm run setup -- --offline` rebuilds without any provider |
+| Search quality without third-party exports | Our own OSM extractor + India Post districts; trigram typo tolerance; alias layer planned (Phase 2) |
 
 ## 12. Sources
 - Google Maps Platform pricing: developers.google.com/maps/billing-and-pricing/pricing and …/india

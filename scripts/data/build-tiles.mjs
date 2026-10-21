@@ -1,11 +1,11 @@
 // Builds our own vector tiles (OpenMapTiles schema → one PMTiles file) from OpenStreetMap with
 // Planetiler. Works on Windows, macOS and Linux; needs Java 21+ (a portable JRE is fine).
 //
-//   npm run data:tiles                                   # NCR from $NAKSHA_DATA_DIR/osm/delhi-ncr.osm.pbf
+//   npm run data:tiles                                   # NCR from $HEISYN_DATA_DIR/osm/delhi-ncr.osm.pbf
 //   npm run data:tiles -- --pbf=india-latest.osm.pbf --bounds=none --full     # all India, production
 //
 // Options
-//   --pbf=<file>          OSM extract (Geofabrik). Default: $NAKSHA_DATA_DIR/osm/delhi-ncr.osm.pbf
+//   --pbf=<file>          OSM extract (Geofabrik). Default: $HEISYN_DATA_DIR/osm/delhi-ncr.osm.pbf
 //   --bounds=ncr|none|w,s,e,n   Clip the output. Default: ncr
 //   --out=<file>          Default: $PMTILES_PATH or data/tiles/region.pmtiles
 //   --full                Download ocean polygons, Natural Earth and lake centerlines (~1.4 GB) for
@@ -27,7 +27,7 @@ const args = Object.fromEntries(
     return [k, v.join("=") || "true"];
   })
 );
-const DATA = path.resolve(process.env.NAKSHA_DATA_DIR || "data");
+const DATA = path.resolve(process.env.HEISYN_DATA_DIR || "data");
 const NCR = "76.84,28.20,77.65,28.90";
 const PLANETILER_URL = "https://github.com/onthegomap/planetiler/releases/download/v0.10.2/planetiler.jar";
 
@@ -124,7 +124,7 @@ function liteSources() {
   const sqlite = path.join(dir, "natural_earth_vector.sqlite");
   fs.rmSync(sqlite, { force: true });
   const ne = new Database(sqlite);
-  ne.exec("CREATE TABLE naksha_placeholder (id INTEGER)");
+  ne.exec("CREATE TABLE heisyn_placeholder (id INTEGER)");
   ne.close();
   const neZip = path.join(dir, "natural_earth_vector.sqlite.zip");
   zipFiles(neZip, dir, ["natural_earth_vector.sqlite"]);

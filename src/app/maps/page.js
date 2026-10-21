@@ -3,7 +3,7 @@ import MapExplorer from "@/components/map/MapExplorer";
 import { firstPartyKey } from "@/lib/keys";
 
 export const metadata = {
-  title: "Naksha Maps — Explore Delhi NCR",
+  title: "HeisynMaps — Explore Delhi NCR",
   description: "Search places, get car, bike, scooter and truck directions, and find any DIGIPIN.",
 };
 

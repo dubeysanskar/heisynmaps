@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import PricingTable from "@/components/PricingTable";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 
-export const metadata = { title: "Pricing — Naksha Maps" };
+export const metadata = { title: "Pricing — HeisynMaps" };
 
 const NOTES = [
   ["Billed per API", "Each API has its own monthly allowance, so heavy routing doesn't eat into your search calls."],

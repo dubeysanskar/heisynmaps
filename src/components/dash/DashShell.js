@@ -23,7 +23,7 @@ export default function DashShell({ nav, badge, user, links = [], children }) {
         <div className="flex items-center gap-2 px-4 py-4">
           <Link href="/" className="flex items-center gap-2">
             <Logo size={28} />
-            <span className="font-semibold tracking-tight">Naksha</span>
+            <span className="font-semibold tracking-tight">HeisynMaps</span>
           </Link>
           <span
             className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${

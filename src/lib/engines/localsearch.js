@@ -4,14 +4,14 @@ import Database from "better-sqlite3";
 import { tryDigipin } from "../digipin";
 import { haversine } from "../geo";
 
-// Naksha's built-in geocoder: an SQLite file (FTS5 full-text + trigram + R*Tree spatial index)
+// HeisynMaps's built-in geocoder: an SQLite file (FTS5 full-text + trigram + R*Tree spatial index)
 // built by scripts/data/build-search-index.mjs from OpenStreetMap data. It runs inside the app
 // process, so search needs no external service. Results have the same shape as the Photon adapter.
 
 const DB_PATH = path.resolve(/*turbopackIgnore: true*/ process.env.SEARCH_DB_PATH || "data/search.db");
 
 function open() {
-  const cached = globalThis.__nakshaSearchDb;
+  const cached = globalThis.__heisynSearchDb;
   if (cached !== undefined && cached?.path === DB_PATH) return cached?.db || null;
   let db = null;
   if (process.env.SEARCH_ENGINE !== "photon" && fs.existsSync(DB_PATH)) {
@@ -21,7 +21,7 @@ function open() {
     db.hasTrigrams = Boolean(db.prepare("SELECT 1 FROM sqlite_master WHERE name = 'places_tri'").get());
     db.hasTrigramVocab = Boolean(db.prepare("SELECT 1 FROM sqlite_master WHERE name = 'places_tri_vocab'").get());
   }
-  globalThis.__nakshaSearchDb = { path: DB_PATH, db };
+  globalThis.__heisynSearchDb = { path: DB_PATH, db };
   return db;
 }
 

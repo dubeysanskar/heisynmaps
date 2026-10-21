@@ -1,5 +1,4 @@
-// MapLibre style generator for the OpenMapTiles vector schema (our Planetiler
-// tiles and the OpenFreeMap dev fallback share it). Three themes:
+// MapLibre style generator for the OpenMapTiles vector schema (our Planetiler tiles). Three themes:
 //   light     — everyday consumer map
 //   dark      — night / dashboards
 //   logistics — muted base, bold truck corridors, toll roads and industrial zones highlighted
@@ -385,7 +384,7 @@ function labelLayers(c) {
   ];
 }
 
-export function buildStyle({ theme = "light", source, glyphs, indiaBoundaryUrl, name = "Naksha" }) {
+export function buildStyle({ theme = "light", source, glyphs, indiaBoundaryUrl, name = "HeisynMaps" }) {
   const c = THEMES[theme] || THEMES.light;
   const sources = { omt: source };
   if (indiaBoundaryUrl) sources["india-boundary"] = { type: "geojson", data: indiaBoundaryUrl };
@@ -472,7 +471,7 @@ export function buildStyle({ theme = "light", source, glyphs, indiaBoundaryUrl, 
   return {
     version: 8,
     name: `${name} ${theme}`,
-    metadata: { "naksha:theme": theme },
+    metadata: { "heisyn:theme": theme },
     glyphs,
     sources,
     layers,

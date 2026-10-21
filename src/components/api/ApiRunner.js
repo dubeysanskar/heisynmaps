@@ -48,7 +48,7 @@ export default function ApiRunner({ endpoint, signedIn = false, demoKey, compact
     }
     const headers = {};
     if (parsedBody) headers["Content-Type"] = "application/json";
-    if (authMode === "session") headers["X-Naksha-Console"] = "1";
+    if (authMode === "session") headers["X-Heisyn-Console"] = "1";
     else if (keyForRequest) headers["X-Api-Key"] = keyForRequest;
     const started = performance.now();
     try {
@@ -80,7 +80,7 @@ export default function ApiRunner({ endpoint, signedIn = false, demoKey, compact
   }
 
   const curl = useMemo(() => {
-    const lines = [`curl -X ${method} "${origin}${url}"`, `  -H "X-Api-Key: $NAKSHA_KEY"`];
+    const lines = [`curl -X ${method} "${origin}${url}"`, `  -H "X-Api-Key: $HEISYN_KEY"`];
     if (hasBody && body.trim()) {
       let compactBody = body;
       try {
@@ -145,7 +145,7 @@ export default function ApiRunner({ endpoint, signedIn = false, demoKey, compact
               <input
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="nk_sk_… or nk_pub_…"
+                placeholder="hm_sk_… or hm_pub_…"
                 className="mt-2 h-9 w-full rounded-lg border border-slate-300 px-3 font-mono text-xs outline-none focus:border-teal-600"
               />
             )}

@@ -23,14 +23,14 @@ export function snippets(endpoint, origin) {
 
   const curl = [
     `curl${endpoint.method === "GET" ? "" : ` -X ${endpoint.method}`} "${url}"`,
-    key && `  -H "X-Api-Key: $NAKSHA_KEY"`,
+    key && `  -H "X-Api-Key: $HEISYN_KEY"`,
     body && `  -H "Content-Type: application/json"`,
     body && `  -d '${JSON.stringify(body)}'`,
   ]
     .filter(Boolean)
     .join(" \\\n");
 
-  const headersJs = [key && `"X-Api-Key": process.env.NAKSHA_KEY`, body && `"Content-Type": "application/json"`].filter(Boolean);
+  const headersJs = [key && `"X-Api-Key": process.env.HEISYN_KEY`, body && `"Content-Type": "application/json"`].filter(Boolean);
   const fetchOptions = [
     endpoint.method !== "GET" && `method: "${endpoint.method}"`,
     headersJs.length && `headers: { ${headersJs.join(", ")} }`,
@@ -48,12 +48,12 @@ const data = await res.json();
 console.log(data);`;
 
   const node = `// Node.js 18+ (built-in fetch). Keep server keys out of browser code.
-const NAKSHA_KEY = process.env.NAKSHA_KEY;
+const HEISYN_KEY = process.env.HEISYN_KEY;
 
 async function main() {
   const res = await fetch("${url}", {
     method: "${endpoint.method}",
-    headers: {${key ? `\n      "X-Api-Key": NAKSHA_KEY,` : ""}${body ? `\n      "Content-Type": "application/json",` : ""}
+    headers: {${key ? `\n      "X-Api-Key": HEISYN_KEY,` : ""}${body ? `\n      "Content-Type": "application/json",` : ""}
     },${body ? `\n    body: JSON.stringify(${indent(json, 4).trimStart()}),` : ""}
   });
   const data = await res.json();
@@ -63,7 +63,7 @@ async function main() {
 
 main().then((data) => console.log(JSON.stringify(data, null, 2)));`;
 
-  const pyHeaders = [key && `"X-Api-Key": os.environ["NAKSHA_KEY"]`].filter(Boolean);
+  const pyHeaders = [key && `"X-Api-Key": os.environ["HEISYN_KEY"]`].filter(Boolean);
   const python = `import os
 import requests
 

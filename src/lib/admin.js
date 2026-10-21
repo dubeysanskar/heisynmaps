@@ -374,10 +374,10 @@ export function envSummary() {
     ["SEARCH_DB_PATH", "path"],
     ["GLYPHS_URL", "url"],
     ["INDIA_BOUNDARY_GEOJSON", "path"],
-    ["REQUIRE_SELF_HOSTED", "flag"],
+    ["HEISYN_OWN_HOSTS", "flag"],
     ["DATABASE_URL", "secret"],
     ["SQLITE_PATH", "path"],
-    ["NAKSHA_SECRET", "secret"],
+    ["HEISYN_SECRET", "secret"],
     ["ADMIN_EMAILS", "secret"],
   ];
   return vars.map(([name, kind]) => {
@@ -390,12 +390,12 @@ export function envSummary() {
 }
 
 export function runtimeCaches() {
-  const lru = globalThis.__nakshaLru || {};
+  const lru = globalThis.__heisynLru || {};
   return [
     ...Object.entries(lru).map(([name, map]) => ({ name: `${name} response cache`, size: map.size })),
-    { name: "API key cache", size: globalThis.__nakshaKeyCache?.size || 0 },
-    { name: "Quota counters", size: globalThis.__nakshaCounters?.size || 0 },
-    { name: "Rate-limit windows", size: globalThis.__nakshaRate?.size || 0 },
-    { name: "Unflushed request logs", size: globalThis.__nakshaUsage?.logs?.length || 0 },
+    { name: "API key cache", size: globalThis.__heisynKeyCache?.size || 0 },
+    { name: "Quota counters", size: globalThis.__heisynCounters?.size || 0 },
+    { name: "Rate-limit windows", size: globalThis.__heisynRate?.size || 0 },
+    { name: "Unflushed request logs", size: globalThis.__heisynUsage?.logs?.length || 0 },
   ];
 }

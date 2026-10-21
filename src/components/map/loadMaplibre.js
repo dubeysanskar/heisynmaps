@@ -2,9 +2,9 @@
 export async function loadMaplibre() {
   const mod = await import("maplibre-gl");
   const maplibregl = mod.default ?? mod; // v6 is ESM with named exports
-  if (!globalThis.__nakshaWorkerSet) {
+  if (!globalThis.__heisynWorkerSet) {
     maplibregl.setWorkerUrl(`${window.location.origin}/vendor/maplibre-gl-worker.mjs`);
-    globalThis.__nakshaWorkerSet = true;
+    globalThis.__heisynWorkerSet = true;
   }
   return maplibregl;
 }

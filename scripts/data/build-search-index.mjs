@@ -1,8 +1,8 @@
-// Builds Naksha's own search index (SQLite FTS5 + R*Tree) from an OpenStreetMap place export.
+// Builds HeisynMaps's own search index (SQLite FTS5 + R*Tree) from an OpenStreetMap place export.
 // The app then answers search, autocomplete, reverse geocoding and nearby from this file
 // without calling any external search service.
 //
-//   npm run data:search -- --dump=C:\naksha-data\search\photon-dump-india.jsonl.zst
+//   npm run data:search -- --dump=C:\heisyn-data\search\photon-dump-india.jsonl.zst
 //   npm run data:search -- --dump=… --bbox=76.4,27.8,78.1,29.3     # only one region
 //
 // Input: the Nominatim-derived JSONL dump published for Photon (one place per line), e.g.
@@ -146,7 +146,8 @@ function addPlace(p) {
 const started = Date.now();
 const decoder = new TextDecoder("utf-8");
 let carry = "";
-const stream = new Decompress((chunk, final) => {
+// Accepts the zstd-compressed export or plain JSONL (e.g. from build-search-from-osm.mjs).
+const onChunk = (chunk, final) => {
   const text = carry + decoder.decode(chunk, { stream: !final });
   const lines = text.split("\n");
   carry = final ? "" : lines.pop();
@@ -158,7 +159,9 @@ const stream = new Decompress((chunk, final) => {
       skipped++;
     }
   }
-});
+};
+const compressed = dump.endsWith(".zst");
+const stream = compressed ? new Decompress(onChunk) : { push: (chunk, final) => onChunk(chunk, final) };
 
 const fd = fs.openSync(dump, "r");
 const size = fs.fstatSync(fd).size;

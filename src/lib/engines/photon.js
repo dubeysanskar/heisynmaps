@@ -4,9 +4,8 @@ import { ApiError } from "../gateway";
 import { tryDigipin } from "../digipin";
 import * as local from "./localsearch";
 
-// Search runs on Naksha's built-in index (localsearch.js) whenever it has been built.
-// Photon is only used when there is no index: a self-hosted one via PHOTON_URL, or the
-// public demo in development.
+// Search runs on our built-in index (localsearch.js). Photon is only used if an operator
+// points PHOTON_URL at a Photon server they run themselves; there is no public fallback.
 
 // Categories for /nearby → Photon 1.x category filters (include=osm.<key>.<value>,...),
 // which work without a text query.

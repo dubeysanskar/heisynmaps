@@ -4,7 +4,7 @@ import DashShell from "@/components/dash/DashShell";
 import { SiteHeader } from "@/components/SiteChrome";
 import { getSessionUser } from "@/lib/auth";
 
-export const metadata = { title: "Admin — Naksha Maps" };
+export const metadata = { title: "Admin — HeisynMaps" };
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: "home" },

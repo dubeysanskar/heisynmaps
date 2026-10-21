@@ -23,7 +23,7 @@ export default async function DocsHome() {
   return (
     <article className="max-w-3xl">
       <p className="text-sm font-medium text-teal-700">Documentation</p>
-      <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-950">Build with Naksha Maps</h1>
+      <h1 className="mt-2 text-4xl font-semibold tracking-tight text-slate-950">Build with HeisynMaps</h1>
       <P>
         One REST API for maps, search, truck-aware routing, distance matrices, route optimisation, geofencing and DIGIPIN, built
         for Indian logistics. Requests and responses are JSON. Coordinates go in as <C>lat</C>/<C>lon</C>; geometry comes back as
@@ -48,7 +48,7 @@ export default async function DocsHome() {
         Send your key as <C>X-Api-Key</C> (or <C>Authorization: Bearer</C>, or <C>?key=</C>). Get one free in the{" "}
         <A href="/console">console</A>. Read <A href="/docs/guides/authentication">Authentication</A> for key types and locks.
       </P>
-      <Code title="bash" code={`curl "${origin}/api/v1/digipin?lat=28.6315&lon=77.2167" -H "X-Api-Key: $NAKSHA_KEY"`} />
+      <Code title="bash" code={`curl "${origin}/api/v1/digipin?lat=28.6315&lon=77.2167" -H "X-Api-Key: $HEISYN_KEY"`} />
 
       <H2 id="reference">API reference</H2>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">

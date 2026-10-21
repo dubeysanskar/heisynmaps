@@ -12,7 +12,7 @@ const FONTS = ["Noto Sans Regular", "Noto Sans Bold", "Noto Sans Italic"];
 const URL = "https://github.com/openmaptiles/fonts/releases/download/v2.0/v2.0.zip";
 const zipArg = process.argv.find((a) => a.startsWith("--zip="))?.slice(6);
 
-let zip = zipArg ? path.resolve(zipArg) : path.join(os.tmpdir(), "naksha-fonts.zip");
+let zip = zipArg ? path.resolve(zipArg) : path.join(os.tmpdir(), "heisyn-fonts.zip");
 if (!zipArg) {
   console.log(`Downloading ${URL} …`);
   const res = await fetch(URL);
@@ -20,7 +20,7 @@ if (!zipArg) {
   fs.writeFileSync(zip, Buffer.from(await res.arrayBuffer()));
 }
 
-const work = fs.mkdtempSync(path.join(os.tmpdir(), "naksha-fonts-"));
+const work = fs.mkdtempSync(path.join(os.tmpdir(), "heisyn-fonts-"));
 // Windows' own tar.exe and macOS tar (bsdtar) read zip files; GNU tar (Linux, Git Bash) does not.
 const tar = process.platform === "win32" ? path.join(process.env.SystemRoot || "C:\\Windows", "System32", "tar.exe") : "tar";
 try {

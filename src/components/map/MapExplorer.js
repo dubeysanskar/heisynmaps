@@ -667,7 +667,7 @@ export default function MapExplorer({ apiKey }) {
   const dark = theme === "dark";
 
   return (
-    <div className={`naksha-ui fixed inset-0 overflow-hidden ${dark ? "dark" : ""}`}>
+    <div className={`heisyn-ui fixed inset-0 overflow-hidden ${dark ? "dark" : ""}`}>
       {/* Wrapper: maplibre-gl.css forces position:relative on the map element itself. */}
       <div className="absolute inset-0">
         <div ref={containerRef} className="h-full w-full" />
@@ -677,9 +677,9 @@ export default function MapExplorer({ apiKey }) {
       <aside className="absolute left-3 right-3 top-3 z-20 flex max-h-[calc(100dvh-1.5rem)] flex-col md:right-auto md:w-[400px]">
         <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] text-[var(--ink)] shadow-2xl">
           <div className="flex items-center gap-2 border-b border-[var(--line)] px-3 py-2.5">
-            <Link href="/" className="flex items-center gap-2" aria-label="Naksha home">
+            <Link href="/" className="flex items-center gap-2" aria-label="HeisynMaps home">
               <Logo size={26} />
-              <span className="text-[15px] font-semibold tracking-tight">Naksha</span>
+              <span className="text-[15px] font-semibold tracking-tight">HeisynMaps</span>
             </Link>
             <div className="ml-auto flex rounded-lg bg-[var(--field)] p-0.5 text-xs font-medium">
               {[

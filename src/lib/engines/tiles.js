@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import zlib from "node:zlib";
 import { PMTiles } from "pmtiles";
-import { config, FALLBACK } from "../config";
+import { config, notConfigured } from "../config";
 
 // Reads a local .pmtiles archive (built by scripts/data/build-tiles.sh) with range reads.
 class NodeFileSource {
@@ -28,10 +28,10 @@ export function hasLocalTiles() {
 function archive() {
   if (!hasLocalTiles()) return null;
   const mtime = fs.statSync(config.pmtilesPath).mtimeMs;
-  const cached = globalThis.__nakshaPmtiles;
+  const cached = globalThis.__heisynPmtiles;
   if (cached && cached.mtime === mtime) return cached.archive;
   const pm = new PMTiles(new NodeFileSource(config.pmtilesPath));
-  globalThis.__nakshaPmtiles = { mtime, archive: pm };
+  globalThis.__heisynPmtiles = { mtime, archive: pm };
   return pm;
 }
 
@@ -51,7 +51,7 @@ export async function tileJson(tileUrlTemplate) {
   const [header, metadata] = await Promise.all([pm.getHeader(), pm.getMetadata().catch(() => ({}))]);
   return {
     tilejson: "3.0.0",
-    name: metadata.name || "Naksha",
+    name: metadata.name || "HeisynMaps",
     attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>',
     tiles: [tileUrlTemplate],
     minzoom: header.minZoom,
@@ -62,11 +62,10 @@ export async function tileJson(tileUrlTemplate) {
   };
 }
 
-// Where MapLibre should fetch tiles from: our own tiles, or the dev fallback.
+// Where MapLibre fetches tiles from: always our own tile archive.
 export function vectorSource(origin, key) {
   if (hasLocalTiles()) {
     return { type: "vector", url: `${origin}/api/v1/tiles/tilejson?key=${encodeURIComponent(key)}` };
   }
-  if (config.requireSelfHosted) throw new Error("No local tiles: build them with npm run data:tiles (REQUIRE_SELF_HOSTED=1)");
-  return { type: "vector", url: FALLBACK.tilejson };
+  throw notConfigured("Map tiles not built: run npm run setup (or npm run data:tiles)");
 }

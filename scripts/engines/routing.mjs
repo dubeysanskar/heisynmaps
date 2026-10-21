@@ -5,7 +5,7 @@
 //   npm run engine:routing:build              # build routing tiles from the OSM extract (~10–30 min)
 //   npm run engine:routing                    # serve on http://127.0.0.1:8002
 //
-// Options: --pbf=<file> (default $NAKSHA_DATA_DIR/osm/delhi-ncr.osm.pbf) --port=8002 --threads=4
+// Options: --pbf=<file> (default $HEISYN_DATA_DIR/osm/delhi-ncr.osm.pbf) --port=8002 --threads=4
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -21,7 +21,7 @@ const args = Object.fromEntries(
     return [k, v.join("=") || "true"];
   })
 );
-const DATA = path.resolve(process.env.NAKSHA_DATA_DIR || "data");
+const DATA = path.resolve(process.env.HEISYN_DATA_DIR || "data");
 const DIR = path.join(DATA, "valhalla");
 const CONFIG = path.join(DIR, "valhalla.json");
 const port = Number(args.port || 8002);
@@ -96,6 +96,9 @@ if (command === "build") {
     console.log(`\nRouting tiles built in ${Math.round((Date.now() - started) / 60000)} min → ${path.join(DIR, "tiles")}`);
     process.exit(0);
   }
+  // A fresh build starts from an empty graph so tiles from an earlier, different extract can't linger.
+  fs.rmSync(path.join(DIR, "tiles"), { recursive: true, force: true });
+  writeConfig();
   run(bins, "valhalla_build_admins", ["-c", CONFIG, pbf]); // country/state rules (driving side, access defaults)
   // The Windows build can crash late in the graph build; parsing results stay on disk, so
   // resume from the "build" stage instead of starting over.

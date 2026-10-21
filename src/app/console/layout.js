@@ -3,7 +3,7 @@ import DashShell from "@/components/dash/DashShell";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { getSessionUser } from "@/lib/auth";
 
-export const metadata = { title: "Console — Naksha Maps" };
+export const metadata = { title: "Console — HeisynMaps" };
 
 const NAV = [
   { href: "/console", label: "Overview", icon: "home" },

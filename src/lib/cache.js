@@ -1,6 +1,6 @@
 // Small in-memory LRU with TTL, shared across hot reloads.
 export function lru(name, { max = 1000, ttlMs = 300_000 } = {}) {
-  const store = (globalThis.__nakshaLru ??= {});
+  const store = (globalThis.__heisynLru ??= {});
   const map = (store[name] ??= new Map());
   return {
     get(key) {

@@ -33,7 +33,7 @@ const k = key.key;
 
 await call("GET", "/api/v1/status");
 await call("GET", "/api/v1/route", { expect: [405] });
-await call("GET", "/api/v1/digipin?lat=28.6315&lon=77.2167", { key: "nk_sk_wrong", expect: [401] });
+await call("GET", "/api/v1/digipin?lat=28.6315&lon=77.2167", { key: "hm_sk_wrong", expect: [401] });
 
 const style = await call("GET", "/api/v1/style?theme=logistics", { key: k });
 console.log(`     style layers: ${style?.layers?.length}`);
@@ -160,7 +160,7 @@ console.log(`${rotateOk ? "PASS" : "FAIL"} rotation (old ${oldGone.status}, new 
 for (const id of [limited.id, ipKey.id, web.id]) await call("DELETE", `/api/console/keys/${id}`);
 
 // --- console session (playground) auth ---
-const pg = await fetch(`${BASE}/api/v1/digipin?lat=28.6&lon=77.2`, { headers: { Cookie: cookie, "X-Naksha-Console": "1" } });
+const pg = await fetch(`${BASE}/api/v1/digipin?lat=28.6&lon=77.2`, { headers: { Cookie: cookie, "X-Heisyn-Console": "1" } });
 if (pg.status !== 200) failures++;
 console.log(`${pg.status === 200 ? "PASS" : "FAIL"} ${pg.status} playground call with session`);
 

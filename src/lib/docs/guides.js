@@ -18,17 +18,17 @@ const BODIES = {
       <H2 id="key">2. Create a server key</H2>
       <P>
         Open <A href="/console/keys/new">Console → API keys → Create key</A>, pick <b>Server</b> and copy the key. It starts with{" "}
-        <C>nk_sk_</C> and is shown only once. Keep it in an environment variable:
+        <C>hm_sk_</C> and is shown only once. Keep it in an environment variable:
       </P>
-      <Code title="bash" code={`export NAKSHA_KEY="nk_sk_…"`} />
+      <Code title="bash" code={`export HEISYN_KEY="hm_sk_…"`} />
       <H2 id="call">3. Make your first call</H2>
       <P>Geocode a Delhi NCR address. Every Indian result carries a DIGIPIN.</P>
-      <Code title="bash" code={`curl "${origin}/api/v1/geocode?q=Sector%2018%20Noida" -H "X-Api-Key: $NAKSHA_KEY"`} />
+      <Code title="bash" code={`curl "${origin}/api/v1/geocode?q=Sector%2018%20Noida" -H "X-Api-Key: $HEISYN_KEY"`} />
       <P>Then route a 12-tonne truck from Okhla to Gurugram:</P>
       <Code
         title="bash"
         code={`curl -X POST "${origin}/api/v1/route" \\
-  -H "X-Api-Key: $NAKSHA_KEY" -H "Content-Type: application/json" \\
+  -H "X-Api-Key: $HEISYN_KEY" -H "Content-Type: application/json" \\
   -d '{"locations":[{"lat":28.5355,"lon":77.271},{"lat":28.4595,"lon":77.0266}],
        "profile":"truck","truck":{"weight_t":12,"height_m":3.8}}'`}
       />
@@ -54,9 +54,9 @@ const BODIES = {
       <Table
         head={["Where", "Example"]}
         rows={[
-          ["Header (recommended)", <C key="h">X-Api-Key: nk_sk_…</C>],
-          ["Bearer token", <C key="b">Authorization: Bearer nk_sk_…</C>],
-          ["Query string", <C key="q">?key=nk_pub_…</C>],
+          ["Header (recommended)", <C key="h">X-Api-Key: hm_sk_…</C>],
+          ["Bearer token", <C key="b">Authorization: Bearer hm_sk_…</C>],
+          ["Query string", <C key="q">?key=hm_pub_…</C>],
         ]}
         codeFirst={false}
       />
@@ -70,7 +70,7 @@ const BODIES = {
         head={["", "Server key", "Browser key"]}
         codeFirst={false}
         rows={[
-          ["Prefix", <C key="1">nk_sk_</C>, <C key="2">nk_pub_</C>],
+          ["Prefix", <C key="1">hm_sk_</C>, <C key="2">hm_pub_</C>],
           ["Where it lives", "Your backend only. Treat it like a password.", "Front-end code and map styles on your website"],
           ["Lock", "Optional IP allowlist", "Required list of allowed origins"],
           ["Typical use", "Dispatch, matrix, optimisation, geofence checks", "Showing the map, autocomplete in a checkout form"],
@@ -164,7 +164,7 @@ const BODIES = {
       <Code title="json" code={`{\n  "error": {\n    "code": "invalid_param",\n    "message": "lat must be a number between -90 and 90"\n  }\n}`} />
       <P>
         Branch on <C>code</C>, which is stable. <C>message</C> is for humans and may change. The code is also in the{" "}
-        <C>X-Naksha-Error</C> response header.
+        <C>X-Heisyn-Error</C> response header.
       </P>
       <H2 id="auth">Authentication and access</H2>
       <Table
@@ -222,12 +222,12 @@ const BODIES = {
       <P>Retry 429, 502, 503 and network errors with exponential backoff and jitter. Don't retry other 4xx errors: fix the request.</P>
       <Code
         title="js"
-        code={`async function naksha(url, init, attempt = 0) {
+        code={`async function heisyn(url, init, attempt = 0) {
   const res = await fetch(url, init);
   if ([429, 502, 503].includes(res.status) && attempt < 4) {
     const wait = Number(res.headers.get("Retry-After")) * 1000 || 500 * 2 ** attempt;
     await new Promise((r) => setTimeout(r, wait + Math.random() * 250));
-    return naksha(url, init, attempt + 1);
+    return heisyn(url, init, attempt + 1);
   }
   const data = await res.json();
   if (!res.ok) throw Object.assign(new Error(data.error.message), { code: data.error.code, status: res.status });
@@ -295,7 +295,7 @@ const BODIES = {
   "maps-sdk": ({ origin }) => (
     <>
       <P>
-        Naksha maps are standard MapLibre style JSON, so any MapLibre SDK can show them. Create a <b>Browser</b> key in the{" "}
+        HeisynMaps maps are standard MapLibre style JSON, so any MapLibre SDK can show them. Create a <b>Browser</b> key in the{" "}
         <A href="/console/keys/new">console</A> with your site's origin, then point the SDK at the style URL:
       </P>
       <Code title="style URL" code={`${origin}/api/v1/style?theme=light&key=YOUR_BROWSER_KEY`} />
@@ -458,7 +458,7 @@ final class MapViewController: UIViewController {
         <li>Search accepts a DIGIPIN directly, with or without dashes.</li>
         <li>Encoding and decoding are free.</li>
       </UL>
-      <Code title="bash" code={`# encode\ncurl "${origin}/api/v1/digipin?lat=28.6315&lon=77.2167" -H "X-Api-Key: $NAKSHA_KEY"\n\n# decode\ncurl "${origin}/api/v1/digipin?code=39J-49K-P2C8" -H "X-Api-Key: $NAKSHA_KEY"`} />
+      <Code title="bash" code={`# encode\ncurl "${origin}/api/v1/digipin?lat=28.6315&lon=77.2167" -H "X-Api-Key: $HEISYN_KEY"\n\n# decode\ncurl "${origin}/api/v1/digipin?code=39J-49K-P2C8" -H "X-Api-Key: $HEISYN_KEY"`} />
       <P>
         Our implementation follows India Post's open-source algorithm (Apache-2.0) and is tested against its published examples.
         Store the 10 characters without dashes; show dashes to people.
@@ -477,14 +477,14 @@ final class MapViewController: UIViewController {
       <Code
         title="bash"
         code={`# which PIN is this delivery point in?
-curl "${origin}/api/v1/pincode?lat=28.495&lon=77.0896" -H "X-Api-Key: $NAKSHA_KEY"
+curl "${origin}/api/v1/pincode?lat=28.495&lon=77.0896" -H "X-Api-Key: $HEISYN_KEY"
 
 # a PIN, its post offices and boundary
-curl "${origin}/api/v1/pincode/122002?geometry=1" -H "X-Api-Key: $NAKSHA_KEY"
+curl "${origin}/api/v1/pincode/122002?geometry=1" -H "X-Api-Key: $HEISYN_KEY"
 
 # PINs for an area name, or starting with 2013
-curl "${origin}/api/v1/pincode?q=lajpat%20nagar" -H "X-Api-Key: $NAKSHA_KEY"
-curl "${origin}/api/v1/pincode?q=2013" -H "X-Api-Key: $NAKSHA_KEY"`}
+curl "${origin}/api/v1/pincode?q=lajpat%20nagar" -H "X-Api-Key: $HEISYN_KEY"
+curl "${origin}/api/v1/pincode?q=2013" -H "X-Api-Key: $HEISYN_KEY"`}
       />
       <UL>
         <li>
@@ -519,7 +519,7 @@ curl "${origin}/api/v1/pincode?q=2013" -H "X-Api-Key: $NAKSHA_KEY"`}
       </P>
       <Code
         title="bash"
-        code={`curl -X POST "${origin}/api/v1/places" -H "X-Api-Key: $NAKSHA_KEY" -H "Content-Type: application/json" \\
+        code={`curl -X POST "${origin}/api/v1/places" -H "X-Api-Key: $HEISYN_KEY" -H "Content-Type: application/json" \\
   -d '{"name":"Okhla DC-1","lat":28.5355,"lon":77.271,"category":"warehouse"}'`}
       />
       <UL>
@@ -560,7 +560,7 @@ curl "${origin}/api/v1/pincode?q=2013" -H "X-Api-Key: $NAKSHA_KEY"`}
         title="js"
         code={`// 1 rider, 5 drops: get the best order, then the route in that order
 const stops = [rider, ...drops, hub];
-const opt = await naksha("${origin}/api/v1/optimize", post({ locations: stops, profile: "scooter" }));
+const opt = await heisyn("${origin}/api/v1/optimize", post({ locations: stops, profile: "scooter" }));
 const ordered = opt.order.map((i) => stops[i]);
 const eta = opt.route.legs.reduce((acc, leg, i) => {
   acc.push((acc[i - 1] || 0) + leg.duration_s);

@@ -1,5 +1,5 @@
 {
-  "name": "naksha-maps",
+  "name": "heisynmaps",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -18,7 +18,8 @@
     "data:tiles": "node scripts/data/build-tiles.mjs",
     "engine:routing:build": "node scripts/engines/routing.mjs build",
     "engine:routing": "node scripts/engines/routing.mjs serve",
-    "setup": "node scripts/setup.mjs"
+    "setup": "node scripts/setup.mjs",
+    "data:search:osm": "node scripts/data/build-search-from-osm.mjs"
   },
   "dependencies": {
     "@mapbox/polyline": "^1.2.1",

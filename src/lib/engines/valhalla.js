@@ -48,9 +48,10 @@ export async function valhalla(action, body) {
 }
 
 async function callValhalla(action, body) {
+  const base = engineUrl("valhalla"); // throws "not configured" (503) rather than "unreachable"
   let res;
   try {
-    res = await fetchWithRetry(`${engineUrl("valhalla")}/${action}`, {
+    res = await fetchWithRetry(`${base}/${action}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "User-Agent": config.userAgent },
       body: JSON.stringify(body),

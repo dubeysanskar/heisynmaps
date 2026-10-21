@@ -22,7 +22,7 @@ body {
 }
 
 /* ---------- Map explorer UI tokens ---------- */
-.naksha-ui {
+.heisyn-ui {
   --panel: #ffffff;
   --field: #f3f5f7;
   --line: #e3e7ec;
@@ -30,7 +30,7 @@ body {
   --ink: #0f172a;
   --muted: #64748b;
 }
-.naksha-ui.dark {
+.heisyn-ui.dark {
   --panel: #141c26;
   --field: #1c2632;
   --line: #263241;
@@ -58,25 +58,25 @@ body {
   cursor: grab;
 }
 
-.naksha-ui .maplibregl-ctrl-group {
+.heisyn-ui .maplibregl-ctrl-group {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 6px 20px rgb(15 23 42 / 0.15);
 }
-.naksha-ui .maplibregl-ctrl-bottom-right {
+.heisyn-ui .maplibregl-ctrl-bottom-right {
   margin-bottom: 8px;
 }
-.naksha-ui.dark .maplibregl-ctrl-group,
-.naksha-ui.dark .maplibregl-ctrl-attrib {
+.heisyn-ui.dark .maplibregl-ctrl-group,
+.heisyn-ui.dark .maplibregl-ctrl-attrib {
   background: #141c26;
   color: #cbd5e1;
 }
-.naksha-ui.dark .maplibregl-ctrl-group button + button {
+.heisyn-ui.dark .maplibregl-ctrl-group button + button {
   border-top-color: #263241;
 }
-.naksha-ui.dark .maplibregl-ctrl-icon {
+.heisyn-ui.dark .maplibregl-ctrl-icon {
   filter: invert(0.9);
 }
-.naksha-ui.dark .maplibregl-ctrl-attrib a {
+.heisyn-ui.dark .maplibregl-ctrl-attrib a {
   color: #cbd5e1;
 }

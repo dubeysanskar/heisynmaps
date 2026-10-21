@@ -5,11 +5,12 @@ export const OPTIONS = preflight;
 
 // Engine health, and which engines (if any) still rely on a third-party service.
 export const GET = publicRoute(async () => {
-  const { engines, thirdParty } = await engineReport();
+  const { engines, thirdParty, missing } = await engineReport();
   return {
-    ok: engines.routing.ok && engines.search.ok,
+    ok: missing.length === 0 && engines.routing.ok && engines.search.ok,
     independent: thirdParty.length === 0,
     third_party: thirdParty,
+    not_configured: missing,
     engines,
   };
 });

@@ -1,12 +1,12 @@
 // Single place to rename / rebrand the product.
 export const BRAND = {
-  name: "Naksha",
-  product: "Naksha Maps",
+  name: "HeisynMaps",
+  product: "HeisynMaps",
   tagline: "India's logistics-first maps platform",
   description:
     "Maps, search, truck routing, distance matrix, route optimisation, geofencing and DIGIPIN — as an API. Self-hosted on OpenStreetMap, built in India.",
   supportEmail: "tech@lekyalogistics.com",
-  keyPrefix: "nk",
+  keyPrefix: "hm",
 };
 
 // Delhi NCR — phase 1 launch region.

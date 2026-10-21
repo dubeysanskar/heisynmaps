@@ -40,7 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# naksha: local data, generated tiles and engine builds
+# heisyn: local data, generated tiles and engine builds
 /data/
 /infra/data/
 /public/vendor/

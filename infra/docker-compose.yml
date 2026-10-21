@@ -1,4 +1,4 @@
-# Self-hosted engines for Naksha on a Linux server (India region):
+# Self-hosted engines for HeisynMaps on a Linux server (India region):
 #   cd infra && cp .env.example .env && docker compose up -d
 # Search, map tiles, fonts and PIN codes run inside the app itself (npm run setup builds them),
 # so this file only adds routing (Valhalla), fleet optimisation (VROOM) and Postgres.
@@ -60,6 +60,6 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: naksha
-      POSTGRES_USER: naksha
+      POSTGRES_DB: heisyn
+      POSTGRES_USER: heisyn
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env}

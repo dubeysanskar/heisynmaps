@@ -18,7 +18,7 @@ export default async function AdminOverview() {
 
   return (
     <>
-      <PageHeader title="Platform overview" description="Every organisation, key and API call across Naksha." />
+      <PageHeader title="Platform overview" description="Every organisation, key and API call across HeisynMaps." />
       <div className="space-y-6 p-4 sm:p-6">
         <div className="grid *:min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat label="Organisations" value={fmtNum(stats.orgs)} hint={stats.suspendedOrgs ? `${stats.suspendedOrgs} suspended` : "none suspended"} />
@@ -35,7 +35,7 @@ export default async function AdminOverview() {
           <Stat
             label="Engines"
             value={`${Object.values(engines).filter((e) => e.ok !== false).length}/${Object.keys(engines).length} up`}
-            hint={Object.values(engines).some((e) => e.mode === "public-fallback") ? "Some on public fallbacks" : "All self-hosted"}
+            hint={Object.values(engines).some((e) => ["not-configured", "missing"].includes(e.mode)) ? "Some not set up" : "All self-hosted"}
           />
         </div>
 

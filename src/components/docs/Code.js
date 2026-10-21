@@ -42,7 +42,7 @@ export function CodeTabs({ tabs }) {
   const [active, setActive] = useState(tabs[0].id);
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("naksha-docs-lang");
+      const saved = localStorage.getItem("heisyn-docs-lang");
       if (tabs.some((t) => t.id === saved)) setActive(saved);
     } catch {}
   }, [tabs]);
@@ -60,7 +60,7 @@ export function CodeTabs({ tabs }) {
               onClick={() => {
                 setActive(t.id);
                 try {
-                  localStorage.setItem("naksha-docs-lang", t.id);
+                  localStorage.setItem("heisyn-docs-lang", t.id);
                 } catch {}
               }}
               className={`shrink-0 border-b-2 px-3 py-2 text-xs font-medium ${
