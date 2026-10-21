@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+/* `dark:` follows a .dark ancestor (the map switches it with its theme). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #0b1220;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* ---------- Map explorer UI tokens ---------- */
+.naksha-ui {
+  --panel: #ffffff;
+  --field: #f3f5f7;
+  --line: #e3e7ec;
+  --hover: #f1f4f6;
+  --ink: #0f172a;
+  --muted: #64748b;
+}
+.naksha-ui.dark {
+  --panel: #141c26;
+  --field: #1c2632;
+  --line: #263241;
+  --hover: #1e2935;
+  --ink: #e2e8f0;
+  --muted: #94a3b8;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.nk-stop {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  border: 2.5px solid #fff;
+  color: #fff;
+  font: 700 12px/21px var(--font-geist-sans), system-ui, sans-serif;
+  text-align: center;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+  cursor: grab;
+}
+
+.naksha-ui .maplibregl-ctrl-group {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgb(15 23 42 / 0.15);
+}
+.naksha-ui .maplibregl-ctrl-bottom-right {
+  margin-bottom: 8px;
+}
+.naksha-ui.dark .maplibregl-ctrl-group,
+.naksha-ui.dark .maplibregl-ctrl-attrib {
+  background: #141c26;
+  color: #cbd5e1;
+}
+.naksha-ui.dark .maplibregl-ctrl-group button + button {
+  border-top-color: #263241;
+}
+.naksha-ui.dark .maplibregl-ctrl-icon {
+  filter: invert(0.9);
+}
+.naksha-ui.dark .maplibregl-ctrl-attrib a {
+  color: #cbd5e1;
+}

@@ -1,0 +1,62 @@
+# Self-hosted engines for Naksha. Run on a Linux server (India region), not a laptop:
+#   cd infra && cp .env.example .env && docker compose up -d
+# First start builds routing tiles and downloads the search index, which takes a while.
+# Then point the Next.js app at them (see ../.env.example).
+
+services:
+  # Routing: route, matrix, isochrone, optimized_route, trace_route.
+  valhalla:
+    image: ghcr.io/valhalla/valhalla-scripted:${VALHALLA_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8002:8002"
+    volumes:
+      - ./data/valhalla:/custom_files
+    environment:
+      # Builds from this extract; drop extra .pbf files into ./data/valhalla to add regions.
+      tile_urls: ${OSM_PBF_URL:-https://download.geofabrik.de/asia/india/northern-zone-latest.osm.pbf}
+      serve_tiles: "True"
+      build_admins: "True"
+      build_time_zones: "True"
+      build_elevation: "False"
+      use_tiles_ignore_pbf: "True"
+      force_rebuild: "False"
+      server_threads: ${VALHALLA_THREADS:-4}
+
+  # Search: autocomplete, geocode, reverse, category nearby (Photon 1.x + prebuilt India index).
+  photon:
+    build: ./photon
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:2322:2322"
+    volumes:
+      - ./data/photon:/photon/data
+    environment:
+      PHOTON_DUMP_URL: ${PHOTON_DUMP_URL:-https://download1.graphhopper.com/public/asia/india/photon-db-india-1.0-latest.tar.bz2}
+      JAVA_OPTS: ${PHOTON_JAVA_OPTS:--Xmx4g}
+
+  # Fleet VRP (capacities, time windows) on top of Valhalla.
+  vroom:
+    image: ghcr.io/vroom-project/vroom-docker:${VROOM_TAG:-v1.15.0}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./vroom:/conf
+    environment:
+      VROOM_ROUTER: valhalla
+    depends_on:
+      - valhalla
+
+  # Production database for the API (users, keys, usage, places, geofences).
+  postgres:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: naksha
+      POSTGRES_USER: naksha
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env}
